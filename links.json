@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "loaderVersion": "1.0",
+  "plugins": [
+    {
+      "id": "test-payload",
+      "name": "Test Payload",
+      "description": "Shows green working badge — verifies loader works",
+      "url": "https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@main/scripts/gartic-test-payload.js",
+      "fallback": "https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/main/scripts/gartic-test-payload.js",
+      "version": "1.0",
+      "mustContain": "garticTestPayloadLoaded"
+    }
+  ]
+}
