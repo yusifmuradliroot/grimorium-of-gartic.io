@@ -1,76 +1,85 @@
-// pixel_drawer — nerfed, Orbit API üzerinden, Voyager→Orbit→VM ile çalışır
-// Recode 0'dan, abyss mantığı gibi ama nerf: max 32, 250ms, burst 8, no auto-start, no flood
-// Çalınma koruması: w.Orbit.verify('pixel_drawer') yoksa abort, standalone çalışmaz
+// pixel_drawer — standalone mywsid capture, manual send, nerfed limits
+// Abyss pixel-bot-standalone mantığı: kendi Hub/API, Voyager→Orbit→VM ile çalışır
+// Anti-theft: w.Orbit.verify('pixel_drawer') yoksa abort
 
 (function () {
     'use strict';
     const w = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
 
     // ——— Orbit verify ———
-    // orbitCore + w.Orbit.verify yoksa Omni dışında çalışıyor → abort
-    // Mobile Firefox: Orbit may not be ready yet, retry 3 times
     let Orbit = w.Orbit;
-    let retries = 0;
-    function getOrbit() {
-        if (w.Orbit && typeof w.Orbit.verify === 'function') return w.Orbit;
-        return null;
-    }
+    function getOrbit() { return (w.Orbit && typeof w.Orbit.verify === 'function') ? w.Orbit : null; }
     Orbit = getOrbit();
     if (!Orbit) {
-        console.warn('[pixel_drawer] Orbit not ready, retrying...');
         let attempts = 0;
-        const retry = setInterval(() => {
-            attempts++;
-            Orbit = getOrbit();
-            if (Orbit) {
-                clearInterval(retry);
-                console.log('[pixel_drawer] Orbit ready after retry', attempts, '→ continuing');
-                // Re-check verify and continue init
-                const token2 = Orbit.verify('pixel_drawer');
-                if (!token2 || token2.indexOf('pixel_drawer') === -1) {
-                    console.warn('[pixel_drawer] verify fail after retry → abort');
-                    return;
-                }
-                console.log('[pixel_drawer] verify OK after retry');
-                // Continue with actual init (will be called via boot, but we need to re-init)
-                // For now, just store Orbit globally and let boot handle it
-                w.__pixelDrawerOrbit = Orbit;
-            } else if (attempts >= 10) {
-                clearInterval(retry);
-                console.warn('[pixel_drawer] Orbit verify yok — Omni dışında abort (after 10 retries)');
-            }
-        }, 300);
-        // Don't return immediately, let boot handle retry via w.__pixelDrawerOrbit
-        Orbit = w.Orbit; // try again, if still null, boot will handle
-        if (!Orbit || typeof Orbit.verify !== 'function') {
-            console.warn('[pixel_drawer] Orbit not ready at load, will retry in boot');
-            // Don't abort yet, let boot retry
-        }
+        const retry = setInterval(() => { attempts++; Orbit = getOrbit(); if (Orbit) { clearInterval(retry); } else if (attempts >= 20) { clearInterval(retry); console.warn('[pixel_drawer] Orbit verify yok — abort'); } }, 300);
     }
     if (Orbit) {
         const token = Orbit.verify('pixel_drawer');
-        if (!token || token.indexOf('pixel_drawer') === -1) {
-            console.warn('[pixel_drawer] verify fail → abort');
-            return;
-        }
+        if (!token || token.indexOf('pixel_drawer') === -1) { console.warn('[pixel_drawer] verify fail → abort'); return; }
         console.log('[pixel_drawer] verify OK');
-    } else {
-        // Will retry in boot, don't abort yet
-        console.log('[pixel_drawer] Orbit not yet, deferring verify to boot');
-        // Set a flag to retry in boot
-        w.__pixelDrawerNeedsRetry = true;
     }
-    // verify OK — Orbit API üzerinden devam (or will be set in boot)
-    Orbit = Orbit || w.Orbit || w.__pixelDrawerOrbit;
-    if (!Orbit) {
-        console.warn('[pixel_drawer] no Orbit at top, will use w.Orbit in init');
-        // Don't return, let init handle it
-    }
-
     if (w.__pixelDrawer) return;
     w.__pixelDrawer = true;
 
-    // ——— Nerfed Effort (lean'den zayıf) ———
+    // ——— Self-contained WS capture (standalone pixel-bot style) ———
+    // Always captures mywsid from E5 packets directly, regardless of Orbit API
+    let mywsid = null;
+    let sessionOpen = false;
+
+    function setMyWsId(id) {
+        if (id === mywsid) return;
+        const old = mywsid; mywsid = id;
+        console.log('%c[pixel_drawer] mywsid: ' + old + ' => ' + id, 'color:#e67e22;font-weight:bold');
+    }
+
+    function handleMessage(msg) {
+        if (typeof msg !== 'string') return;
+        if (msg === '40' || msg.startsWith('40{')) { sessionOpen = true; return; }
+        if (msg === '41') { sessionOpen = false; mywsid = null; return; }
+        if (!msg.startsWith('42[')) return;
+        let data;
+        try { data = JSON.parse(msg.slice(2)); } catch (e) { return; }
+        if (!Array.isArray(data)) return;
+        const code = String(data[0]);
+        if (code === '5') {
+            sessionOpen = true;
+            if (Number.isFinite(data[2])) setMyWsId(data[2]);
+            else if (data[2] != null) setMyWsId(Number(data[2]));
+            if (data[1] != null && w.myid === undefined) w.myid = data[1];
+        }
+        if (code === '17') { sessionOpen = true; }
+        if (code === '16') { sessionOpen = true; }
+    }
+
+    // Register with Hub (Orbit or standalone)
+    function hookHub() {
+        if (typeof w.onWS === 'function') {
+            w.onWS(handleMessage);
+            console.log('[pixel_drawer] hooked into Hub onWS');
+            return true;
+        }
+        return false;
+    }
+    if (!hookHub()) {
+        // Hub not ready yet, retry
+        let hubAttempts = 0;
+        const hubRetry = setInterval(() => {
+            hubAttempts++;
+            if (hookHub()) { clearInterval(hubRetry); }
+            else if (hubAttempts >= 30) { clearInterval(hubRetry); console.warn('[pixel_drawer] Hub onWS not available after 30 attempts'); }
+        }, 200);
+    }
+
+    // Also hook into Orbit events as backup
+    if (Orbit && Orbit.events) {
+        try { Orbit.events.on('ws-session-open', () => { sessionOpen = true; }); } catch(e) {}
+        try { Orbit.events.on('ws-session-close', () => { sessionOpen = false; mywsid = null; }); } catch(e) {}
+    }
+
+    console.log('%c[pixel_drawer] v1.3-standalone — self-contained mywsid capture', 'color:#e67e22;font-weight:bold');
+
+    // ——— Nerfed Effort ———
     const EFF_CFG = { CANDIDATES: [32, 24, 16], SNAP_BITS: 3, SRC_MAX: 512, GRACE_S: 5 };
     function rgbToHex(c) { return ((1 << 24) | (c[0] << 16) | (c[1] << 8) | c[2]).toString(16).slice(1).toUpperCase(); }
     function computeLayout(gw, gh, W, H) { const s = Math.min(W / gw, H / gh); return { s, offX: Math.round((W - gw * s) / 2), offY: Math.round((H - gh * s) / 2) }; }
@@ -157,63 +166,20 @@
         const totalPk = packets.length; const dbg = 'adaylar[' + candParts.join(' ') + '] -> ' + chosen.gw + 'x' + chosen.gh + ' ~' + est(totalPk).toFixed(1) + 'sn' + (forced ? ' BUTCE ASILDI' : '');
         return { ok: true, gw: chosen.gw, gh: chosen.gh, packets, meta: { colors: chosen.colors, rectPackets: chosen.rectCount, estSeconds: est(totalPk), limitSeconds: limitSec, forcedSmall: forced, candText: candParts.join(' '), debug: dbg, preview: idata } };
     }
-    w.PixelDrawerEffort = { version: '1.0-nerf', planFromImage: (img, opts) => { try { return planFromImage(img, opts); } catch (e) { return { ok: false, error: String(e) }; } } };
+    w.PixelDrawerEffort = { version: '1.3-standalone', planFromImage: (img, opts) => { try { return planFromImage(img, opts); } catch (e) { return { ok: false, error: String(e) }; } } };
 
-    // ——— pixel_drawer bot (self-contained, Orbit Hub only for WS) ———
+    // ——— Bot (manual, self-contained mywsid) ———
     const CFG = { PACKET_MS: 250, BURST: 8, BURST_PAUSE_MS: 600, JITTER_MS: 2, MAX_DRAW_S: 60 };
     const state = { processed: false, gw: 0, gh: 0, queue: [], total: 0, idx: 0, drawing: false, timer: null, nextAt: 0, drawStart: 0 };
-    let myWsId = null; // captured directly from WS packets
-    let wsOpen = false;
     let tickerWorker = null;
     let panel = null, toggleBtn = null, previewEl = null, fileEl = null, infoEl1 = null, infoEl2 = null, fillEl = null, startBtn = null, stopBtn = null, clearBtn = null, statusEl = null, isOpen = false;
 
-    function getSid() { return myWsId; }
-    function sendPacket(data) { return Orbit.hub.sendWS(data); }
-
-    function init() {
-        if (!Orbit || typeof Orbit.verify !== 'function') {
-            Orbit = w.Orbit || w.__pixelDrawerOrbit;
-            if (!Orbit) { setTimeout(init, 500); return; }
-            const token = Orbit.verify('pixel_drawer');
-            if (!token || token.indexOf('pixel_drawer') === -1) return;
-        }
-        w.__pixelDrawerOrbit = Orbit;
-
-        // SELF-CONTAINED: capture mywsid directly from WS packets
-        try {
-            Orbit.hub.onWS(function(msg) {
-                if (typeof msg !== 'string') return;
-                // Session open
-                if (msg === '40' || msg.startsWith('40{')) { wsOpen = true; return; }
-                // Session close
-                if (msg === '41') { wsOpen = false; myWsId = null; return; }
-                // Find JSON array in Socket.IO message
-                const arrIdx = msg.indexOf('42[');
-                const ackIdx = msg.indexOf('43[');
-                let start = -1;
-                if (arrIdx >= 0 && ackIdx >= 0) start = Math.min(arrIdx, ackIdx);
-                else if (arrIdx >= 0) start = arrIdx;
-                else if (ackIdx >= 0) start = ackIdx;
-                if (start < 0) return;
-                let data; try { data = JSON.parse(msg.slice(start + 1)); } catch(e) { return; }
-                if (!Array.isArray(data)) return;
-                const code = String(data[0]);
-                // E5: room info — mywsid is data[2]
-                if (code === '5') {
-                    if (data[2] != null) { myWsId = Number(data[2]); console.log('[pixel_drawer] mywsid:', myWsId); }
-                    wsOpen = true;
-                }
-                // E17: turn assign — extract mywsid from target if it matches
-                if (code === '17' && data[1] != null && myWsId == null) {
-                    // Can't extract from E17 alone, but note it
-                    console.log('[pixel_drawer] E17 received, target:', data[1], 'current sid:', myWsId);
-                }
-            });
-            console.log('[pixel_drawer] WS listener registered (self-contained mode)');
-        } catch(e) { console.error('[pixel_drawer] WS listener fail', e); }
-
-        console.log('%c[pixel_drawer] v1.2-manual (self-contained mywsid)', 'color:#e67e22;font-weight:bold');
+    function getSid() { return mywsid; }
+    function sendPacket(data) {
+        if (typeof w.sendWS === 'function') return w.sendWS(data);
+        return false;
     }
+
     function ensureTicker() {
         if (tickerWorker || typeof Worker === 'undefined') return;
         const src = 'var id=null;onmessage=function(e){if(e.data==="start"){if(id)return;id=setInterval(function(){postMessage(1);},' + CFG.PACKET_MS + ');}else{if(id){clearInterval(id);id=null;}}};';
@@ -225,7 +191,7 @@
     function startDrawing() {
         if (state.drawing || !state.processed) return;
         const sid = getSid();
-        if (sid == null) { setStatus('mywsid yok — odaya gir, bekle'); console.warn('[pixel_drawer] sid null'); return; }
+        if (sid == null) { setStatus('mywsid yok — odaya girip bekle'); console.warn('[pixel_drawer] sid null'); return; }
         state.drawing = true; state.idx = 0; state.nextAt = Date.now(); state.drawStart = Date.now();
         updateButtons(); startTicker(); onTicker();
         console.log('%c[pixel_drawer] ▶ started: ' + state.total + ' pkts ~' + estSeconds(state.total).toFixed(1) + 's | sid:' + sid, 'color:#e67e22;font-weight:bold');
@@ -255,33 +221,25 @@
         if (!res || !res.ok) throw new Error((res && res.error) || 'plan hatası');
         state.gw = res.gw; state.gh = res.gh; state.queue = res.packets.slice(); state.total = state.queue.length; state.idx = 0; state.processed = true; return res;
     }
-    // ——— GUI (Orbit GUI'sinden ayrı, kendi paneli) ———
+
+    // ——— GUI ———
     function ensureUI() {
         if (panel) return;
-        // Mobile Firefox: body may not be ready, wait
-        if (!document.body) {
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', ensureUI, { once: true });
-                return;
-            }
-            setTimeout(ensureUI, 300);
-            return;
-        }
+        if (!document.body) { setTimeout(ensureUI, 300); return; }
         const s = document.createElement('style');
         s.id = 'pd-styles';
-        // Mobile-friendly: larger toggle, centered panel, responsive
         s.textContent = '#pd-toggle{position:fixed;left:10px;top:8px;z-index:2147483647;padding:12px 20px;background:#e67e22;color:#fff;border:2px solid #fff;border-radius:24px;font:bold 14px Arial;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.5);display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}#pd-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2147483647;width:320px;max-width:96vw;max-height:90vh;overflow:auto;background:#1e272e;border:2px solid #e67e22;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none}#pd-head{display:flex;align-items:center;padding:10px 12px;background:#e67e22;font:bold 14px Arial;color:#fff;position:sticky;top:0;z-index:1}#pd-close{margin-left:auto;cursor:pointer;font-size:20px;padding:0 6px}#pd-body{padding:12px;display:flex;flex-direction:column;gap:10px}#pd-preview{width:140px;height:140px;margin:0 auto;display:block;background:#141a1e;border:1px solid #34495e;border-radius:8px;image-rendering:pixelated}#pd-filebtn{display:block;text-align:center;padding:10px;background:#2c3e50;color:#ecf0f1;border:1px solid #e67e22;border-radius:8px;font:bold 13px Arial;cursor:pointer}#pd-file{display:none}.pd-info{font:12px Arial;color:#95a5a6;text-align:center}.pd-bar{height:10px;background:#141a1e;border:1px solid #34495e;border-radius:5px;overflow:hidden}#pd-fill{height:100%;width:0%;background:#e67e22;transition:width .2s}.pd-row{display:flex;gap:8px}.pd-row button{flex:1;padding:10px 0;border:none;border-radius:8px;color:#fff;font:bold 12px Arial;cursor:pointer;min-height:36px}.pd-row button:disabled{opacity:.35}#pd-start{background:#e67e22}#pd-stop{background:#c0392b}#pd-clear{background:#7f8c8d}.pd-check{display:none}#pd-status{font:12px Arial;color:#b2bec3;text-align:center;min-height:16px;line-height:1.4}@media(max-width:480px){#pd-toggle{left:8px;top:8px;font-size:12px;padding:8px 14px}#pd-panel{width:96vw;top:50%;left:50%;transform:translate(-50%,-50%)}}';
         document.head.appendChild(s);
         panel = document.createElement('div'); panel.id = 'pd-panel';
-        const head = document.createElement('div'); head.id = 'pd-head'; head.textContent = 'PIXEL_DRAWER (NERF)'; const close = document.createElement('span'); close.id = 'pd-close'; close.textContent = '×'; close.onclick = () => show(false); head.appendChild(close);
+        const head = document.createElement('div'); head.id = 'pd-head'; head.textContent = 'PIXEL_DRAWER'; const close = document.createElement('span'); close.id = 'pd-close'; close.textContent = '×'; close.onclick = () => show(false); head.appendChild(close);
         const body = document.createElement('div'); body.id = 'pd-body';
         previewEl = document.createElement('canvas'); previewEl.id = 'pd-preview'; previewEl.width = 32; previewEl.height = 32;
         fileEl = document.createElement('input'); fileEl.id = 'pd-file'; fileEl.type = 'file'; fileEl.accept = 'image/*';
-        const fileBtn = document.createElement('label'); fileBtn.id = 'pd-filebtn'; fileBtn.textContent = '🖼 Fotoğraf Seç'; fileBtn.appendChild(fileEl); fileEl.onchange = handleFile;
+        const fileBtn = document.createElement('label'); fileBtn.id = 'pd-filebtn'; fileBtn.textContent = 'Fotoğraf Seç'; fileBtn.appendChild(fileEl); fileEl.onchange = handleFile;
         infoEl1 = document.createElement('div'); infoEl1.className = 'pd-info'; infoEl1.textContent = 'foto bekleniyor (max 32)';
         infoEl2 = document.createElement('div'); infoEl2.className = 'pd-info'; infoEl2.innerHTML = '&nbsp;';
         const bar = document.createElement('div'); bar.className = 'pd-bar'; fillEl = document.createElement('div'); fillEl.id = 'pd-fill'; bar.appendChild(fillEl);
-        startBtn = document.createElement('button'); startBtn.id = 'pd-start'; startBtn.textContent = '▶ Çiz (nerf)'; startBtn.onclick = startDrawing;
+        startBtn = document.createElement('button'); startBtn.id = 'pd-start'; startBtn.textContent = '▶ Çiz'; startBtn.onclick = startDrawing;
         stopBtn = document.createElement('button'); stopBtn.id = 'pd-stop'; stopBtn.textContent = 'Durdur'; stopBtn.onclick = () => halt('Durduruldu');
         clearBtn = document.createElement('button'); clearBtn.id = 'pd-clear'; clearBtn.textContent = 'Sil'; clearBtn.onclick = clearCanvas;
         const row = document.createElement('div'); row.className = 'pd-row'; row.appendChild(startBtn); row.appendChild(stopBtn); row.appendChild(clearBtn);
@@ -293,7 +251,7 @@
         document.addEventListener('keydown', e => { if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.altKey && !e.metaKey) { const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return; show(!isOpen); } });
         updateButtons();
     }
-    function show(o) { if (!panel || !toggleBtn) { console.warn('[pixel_drawer] show: panel or toggleBtn missing', !!panel, !!toggleBtn); return; } isOpen = !!o; panel.style.display = isOpen ? 'block' : 'none'; toggleBtn.style.display = isOpen ? 'none' : 'block'; toggleBtn.style.visibility = 'visible'; console.log('[pixel_drawer] show', o, 'panel', panel.style.display, 'toggle', toggleBtn.style.display); }
+    function show(o) { if (!panel || !toggleBtn) return; isOpen = !!o; panel.style.display = isOpen ? 'block' : 'none'; toggleBtn.style.display = isOpen ? 'none' : 'block'; toggleBtn.style.visibility = 'visible'; }
     function setStatus(m) { if (statusEl) statusEl.textContent = m; }
     function updateButtons() { if (!startBtn) return; startBtn.disabled = !state.processed || state.drawing; stopBtn.disabled = !state.drawing; clearBtn.disabled = false; }
     function updateProgress() { if (fillEl) fillEl.style.width = state.total ? (state.idx / state.total * 100) + '%' : '0%'; }
@@ -308,36 +266,21 @@
         let res; try { res = processImage(img); } catch (e) { setStatus('Hata:' + e.message); return; }
         previewEl.width = res.gw; previewEl.height = res.gh; previewEl.getContext('2d').putImageData(res.meta.preview, 0, 0);
         const sc = Math.min(120 / res.gw, 120 / res.gh); previewEl.style.width = Math.round(res.gw * sc) + 'px'; previewEl.style.height = Math.round(res.gh * sc) + 'px';
-        infoEl1.textContent = res.gw + '×' + res.gh + ' • ' + res.meta.colors + ' renk • ' + res.meta.rectPackets + ' rect (nerf)';
-        infoEl2.textContent = state.total + ' paket ~' + estSeconds(state.total).toFixed(1) + 'sn (nerf)';
+        infoEl1.textContent = res.gw + '×' + res.gh + ' • ' + res.meta.colors + ' renk • ' + res.meta.rectPackets + ' rect';
+        infoEl2.textContent = state.total + ' paket ~' + estSeconds(state.total).toFixed(1) + 'sn';
         updateProgress(); updateButtons(); setStatus('Hazır — ▶ Çiz ile gönder');
     }
     w.pixelDrawerStop = () => { if (state.drawing) halt('Durduruldu'); };
-    w.pixelDrawerState = () => ({ drawing: state.drawing, sent: state.idx, total: state.total });
+    w.pixelDrawerState = () => ({ drawing: state.drawing, sent: state.idx, total: state.total, mywsid: mywsid });
+
+    // ——— Boot ———
     (function boot() {
         const start = () => {
-            console.log('[pixel_drawer] boot start, Orbit:', !!w.Orbit, 'verify:', typeof w.Orbit?.verify, 'body:', !!document.body, 'readyState:', document.readyState);
             try { ensureUI(); } catch(e) { console.error('[pixel_drawer] ensureUI fail', e); }
-            console.log('[pixel_drawer] UI ensured, panel:', !!panel, 'toggleBtn:', !!toggleBtn, 'panelInDOM:', !!(panel && document.body.contains(panel)));
             try { show(false); } catch(e) {}
-            try { init(); } catch(e) { console.error('[pixel_drawer] init fail', e); }
-            console.log('[pixel_drawer] init done');
-            // Mobile: ensure toggle is visible and clickable
+            console.log('[pixel_drawer] boot done, mywsid:', mywsid, 'wsOpen:', sessionOpen);
             setTimeout(() => {
-                if (toggleBtn) {
-                    toggleBtn.style.display = 'block';
-                    toggleBtn.style.visibility = 'visible';
-                    toggleBtn.style.opacity = '1';
-                    toggleBtn.style.pointerEvents = 'auto';
-                    if (!document.body.contains(toggleBtn)) {
-                        try { document.body.appendChild(toggleBtn); } catch(e) {}
-                    }
-                    console.log('[pixel_drawer] toggleBtn final check, visible:', toggleBtn.offsetParent !== null, 'rect:', toggleBtn.getBoundingClientRect());
-                } else {
-                    console.warn('[pixel_drawer] toggleBtn still missing after boot');
-                    // Retry once
-                    try { ensureUI(); if (toggleBtn) toggleBtn.style.display = 'block'; } catch(e) {}
-                }
+                if (toggleBtn) { toggleBtn.style.display = 'block'; toggleBtn.style.visibility = 'visible'; toggleBtn.style.opacity = '1'; toggleBtn.style.pointerEvents = 'auto'; }
             }, 500);
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
