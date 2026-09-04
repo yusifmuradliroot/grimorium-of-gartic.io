@@ -52,9 +52,7 @@
     // orbitCore — Voyager mustContain marker
 (function () {
         if (w.__omniWsHub || w.__garticWsHub) {
-            // Already have a hub (e.g., standalone pixel was loaded before omni) — expose alias and reuse
             if (w.__garticWsHub && !w.__omniWsHub) w.__omniWsHub = true;
-            // Ensure omni aliases exist even if hub was from garticWsHub
             if (typeof w.sendWS !== 'function' && typeof w.onWS === 'function') {
                 console.log('%c[hub] existing garticWsHub detected — omni reusing', 'color:#0af;font-weight:bold');
             }
@@ -67,27 +65,32 @@
         const listeners = [];
         const sendListeners = [];
         if (w.wsHubVerbose === undefined) w.wsHubVerbose = false;
-        function PatchedWS(url, protocols) {
-            const inst = protocols !== undefined ? new NativeWS(url, protocols) : new NativeWS(url);
+
+        // Patch incoming message on a WS instance
+        function patchInstance(inst) {
+            if (inst.__omniPatched) return;
+            inst.__omniPatched = true;
             activeWS = inst;
-            if (w.wsHubVerbose) console.log('%c[hub] WS NEW ' + url, 'color:#0af;font-weight:bold');
             const realSend = inst.send.bind(inst);
             inst.send = function (data) {
-                if (w.wsHubVerbose) console.log('%c[WS \u2192]', 'color:#e74c3c;font-weight:bold', data);
+                if (w.wsHubVerbose) console.log('%c[WS →]', 'color:#e74c3c;font-weight:bold', data);
                 for (let i = 0; i < sendListeners.length; i++) try { sendListeners[i](data); } catch (e) {}
                 return realSend(data);
             };
-            inst.addEventListener('open', () => { if (w.wsHubVerbose) console.log('%c[WS OPEN]', 'color:#27ae60;font-weight:bold'); });
-            inst.addEventListener('close', () => {
-                if (w.wsHubVerbose) console.log('%c[WS CLOSE]', 'color:#c0392b');
-                if (activeWS === inst) activeWS = null;
-            });
+            inst.addEventListener('open', () => { activeWS = inst; if (w.wsHubVerbose) console.log('%c[WS OPEN]', 'color:#27ae60;font-weight:bold'); });
+            inst.addEventListener('close', () => { if (activeWS === inst) activeWS = null; if (w.wsHubVerbose) console.log('%c[WS CLOSE]', 'color:#c0392b'); });
             inst.addEventListener('error', e => { if (w.wsHubVerbose) console.log('%c[WS ERROR]', 'color:#c0392b', e); });
             inst.addEventListener('message', e => {
                 const msg = e.data;
-                if (w.wsHubVerbose) console.log('%c[WS \u2190]', 'color:#2ecc71;font-weight:bold', msg);
                 for (let i = 0; i < listeners.length; i++) try { listeners[i](msg); } catch (err) { console.warn('[hub] listener error', err); }
             });
+            console.log('%c[hub] instance patched', 'color:#0af;font-weight:bold');
+        }
+
+        function PatchedWS(url, protocols) {
+            const inst = protocols !== undefined ? new NativeWS(url, protocols) : new NativeWS(url);
+            activeWS = inst;
+            patchInstance(inst);
             return inst;
         }
         PatchedWS.prototype = NativeWS.prototype;
@@ -97,6 +100,71 @@
         PatchedWS.CLOSED = NativeWS.CLOSED;
         try { Object.defineProperty(PatchedWS, Symbol.hasInstance, { value: i => i instanceof NativeWS }); } catch (e) {}
         w.WebSocket = PatchedWS;
+
+        // CRITICAL: Intercept addEventListener('message') on ALL WS instances
+        // This catches messages on instances created BEFORE our script ran
+        const origAddEvent = NativeWS.prototype.addEventListener;
+        NativeWS.prototype.addEventListener = function(type, cb, opts) {
+            if (type === 'message' && typeof cb === 'function') {
+                // Ensure this instance is patched
+                if (!this.__omniPatched) {
+                    activeWS = this;
+                    patchInstance(this);
+                }
+                // Also register as our listener
+                if (listeners.indexOf(cb) === -1) listeners.push(cb);
+            }
+            return origAddEvent.call(this, type, cb, opts);
+        };
+
+        // CRITICAL: Intercept onmessage setter on ALL WS instances
+        // Socket.IO may use onmessage instead of addEventListener
+        try {
+            const origDescriptor = Object.getOwnPropertyDescriptor(NativeWS.prototype, 'onmessage') ||
+                                   Object.getOwnPropertyDescriptor(WebSocket.prototype, 'onmessage');
+            if (origDescriptor) {
+                Object.defineProperty(NativeWS.prototype, 'onmessage', {
+                    get: function() { return origDescriptor.get.call(this); },
+                    set: function(cb) {
+                        if (typeof cb === 'function') {
+                            if (!this.__omniPatched) {
+                                activeWS = this;
+                                patchInstance(this);
+                            }
+                            // Wrap original handler to also notify our listeners
+                            const orig = cb;
+                            const wrapped = (e) => {
+                                const msg = e.data;
+                                for (let i = 0; i < listeners.length; i++) try { listeners[i](msg); } catch(err) {}
+                                if (orig) orig.call(this, e);
+                            };
+                            origDescriptor.set.call(this, wrapped);
+                        } else {
+                            origDescriptor.set.call(this, cb);
+                        }
+                    },
+                    configurable: true
+                });
+            }
+        } catch(e) { console.warn('[hub] onmessage proxy fail', e); }
+
+        // Scan for existing open WebSocket instances and patch them
+        try {
+            const keys = Object.getOwnPropertyNames(w);
+            for (let i = 0; i < keys.length; i++) {
+                try {
+                    const v = w[keys[i]];
+                    if (v && v instanceof NativeWS && v.readyState <= 1) {
+                        if (!v.__omniPatched) {
+                            activeWS = v;
+                            patchInstance(v);
+                            console.log('%c[hub] found existing WS instance, patched', 'color:#0af;font-weight:bold');
+                        }
+                    }
+                } catch(e) {}
+            }
+        } catch(e) {}
+
         w.sendWS = function (data) {
             if (!activeWS || activeWS.readyState !== 1) { console.warn('[hub] sendWS: WS not open'); return false; }
             activeWS.send(data); return true;
@@ -106,9 +174,8 @@
         w.onWSSend = function (cb) { if (typeof cb !== 'function') return null; sendListeners.push(cb); return cb; };
         w.offWSSend = function (cb) { const i = sendListeners.indexOf(cb); if (i > -1) sendListeners.splice(i, 1); };
         w.wsHubGetSocket = function () { return activeWS; };
-        // Backward compat for plugins that check __garticWsHub
         w.__garticWsHub = true;
-        console.log('%c[hub] omni hub v2 ready (unsafeWindow singleton)', 'color:#0af;font-weight:bold');
+        console.log('%c[hub] omni hub v2 ready (with instance interception)', 'color:#0af;font-weight:bold');
     })();
 
     // ============================================================
@@ -181,10 +248,12 @@
         }
         function applyRoomInfo(data) {
             ensureSession();
-            if (Number.isFinite(data[2])) setMyWsId(data[2]);
+            if (data[2] != null && Number.isFinite(Number(data[2]))) setMyWsId(Number(data[2]));
+            else if (data[1] != null && Number.isFinite(Number(data[1]))) setMyWsId(Number(data[1]));
             if (data[1] != null) setMyId(data[1]);
             roster.clear();
             if (Array.isArray(data[5])) data[5].forEach(p => { if (isPlayerObj(p)) roster.set(String(p.id), p); });
+            console.log('[api] E5 room info, mywsid:', mywsid, 'myid:', myid, 'players:', roster.size, 'raw:', JSON.stringify(data).slice(0, 200));
             emitRoster();
         }
         function applyJoin(data) { if (!isPlayerObj(data[1])) return; ensureSession(); roster.set(String(data[1].id), data[1]); emitRoster(); }
@@ -201,22 +270,35 @@
             console.log('%c[api] kick target='+info.target+' voter='+info.voters.join(','),'color:#e67e22;font-weight:bold');
             try{ w.dispatchEvent(new CustomEvent('api-kick',{detail:info})); }catch(e){}
         }
-        // Message router — exact copy of original but with ensureSession on 5/23
+        // Robust Socket.IO message parser — handles 42[, 43[, 421[, etc.
         function handleMessage(msg) {
             if (typeof msg !== 'string') return;
             if (msg === '40' || msg.startsWith('40{')) return setSession(true);
             if (msg === '41') return setSession(false);
-            if (!msg.startsWith('42[')) return;
-            let data; try{ data=JSON.parse(msg.slice(2)); }catch(e){return;} if(!Array.isArray(data)) return;
-            const code=String(data[0]);
-            if (code==='5') applyRoomInfo(data);
-            else if (code==='23') applyJoin(data);
-            else if (code==='24') applyLeave(data);
-            else if (code==='17') { ensureSession(); applyTurnAssign(data); }
-            // dispatch to onPkt subscribers
+            // Find the start of JSON array: "42[" or "43[" or "421[" etc.
+            const arrStart = msg.indexOf('42[');
+            const ackStart = msg.indexOf('43[');
+            let start = -1;
+            if (arrStart >= 0 && ackStart >= 0) start = Math.min(arrStart, ackStart);
+            else if (arrStart >= 0) start = arrStart;
+            else if (ackStart >= 0) start = ackStart;
+            // Also try other numeric prefixes (421, 422, etc.)
+            if (start < 0) {
+                const m = msg.match(/^(\d+)\[/);
+                if (m && parseInt(m[1]) >= 42) start = m[0].length - 1;
+            }
+            if (start < 0) return;
+            let data;
+            try { data = JSON.parse(msg.slice(start + 1)); } catch(e) { return; }
+            if (!Array.isArray(data)) return;
+            const code = String(data[0]);
+            if (code === '5') applyRoomInfo(data);
+            else if (code === '23') applyJoin(data);
+            else if (code === '24') applyLeave(data);
+            else if (code === '17') { ensureSession(); applyTurnAssign(data); }
+            else if (code === '16') { ensureSession(); handleDrawTurnPacket(data); }
             dispatchPkt(data);
-            if (code==='45' || code==='21') handleKickPacket(data);
-            if (code==='16') { ensureSession(); handleDrawTurnPacket(data); }
+            if (code === '45' || code === '21') handleKickPacket(data);
         }
         // onPkt
         const pktSubs=[];
@@ -243,8 +325,31 @@
         // Attach — since hub is sync, we can attach immediately
         if (typeof w.onWS === 'function') w.onWS(handleMessage);
         else console.warn('%c[api] onWS missing! hub not ready','color:#c0392b');
-        // Late recovery: if WS already open and we have mywsid in page's existing state (e.g., after SPA), ensure session
-        setTimeout(()=>{ try{ if(!sessionOpen && w.wsHubGetSocket && w.wsHubGetSocket() && w.wsHubGetSocket().readyState===1 && mywsid!=null) setSession(true); }catch(e){} }, 500);
+        // Packet counter for debug
+        let pktCount = 0;
+        if (typeof w.onWS === 'function') w.onWS(function(msg) {
+            pktCount++;
+            if (pktCount <= 5 || pktCount % 50 === 0) console.log('[api] ws pkt #' + pktCount, typeof msg === 'string' ? msg.slice(0, 120) : msg);
+            // Fallback: try to extract mywsid from ANY packet
+            if (mywsid == null && typeof msg === 'string' && msg.indexOf('42[') >= 0) {
+                try {
+                    const d = JSON.parse(msg.slice(msg.indexOf('42[') + 1));
+                    if (Array.isArray(d) && d[0] === 5 && d[2] != null) {
+                        setMyWsId(Number(d[2]));
+                        console.log('[api] fallback E5 mywsid:', mywsid);
+                    }
+                } catch(e) {}
+            }
+        });
+        // Late recovery: if WS already open, try to extract mywsid
+        setTimeout(() => {
+            try {
+                const sock = w.wsHubGetSocket && w.wsHubGetSocket();
+                if (sock && sock.readyState === 1 && mywsid == null) {
+                    console.warn('[api] late recovery: WS open but mywsid null, waiting for E5...');
+                }
+            } catch(e) {}
+        }, 500);
         console.log('%c[api] omni api v2 ready (session robust)','color:#f39c12;font-weight:bold');
     })();
 
@@ -797,11 +902,9 @@
         if (pluginId === 'pixel_drawer') {
             try { const el = document.getElementById('pd-toggle'); if (el) el.remove(); } catch(e) {}
             try { const el = document.getElementById('pd-panel'); if (el) el.remove(); } catch(e) {}
-            try { const s = document.getElementById('pd-styles'); if (s) s.remove(); } catch(e) {}
+            try { const el = document.getElementById('pd-styles'); if (el) el.remove(); } catch(e) {}
             try { if (typeof unsafeWindow !== 'undefined') { delete unsafeWindow.__pixelDrawer; delete unsafeWindow.__pixelDrawerOrbit; } } catch(e) {}
             try { if (typeof unsafeWindow !== 'undefined' && typeof unsafeWindow.pixelDrawerStop === 'function') unsafeWindow.pixelDrawerStop(); } catch(e) {}
-            // Stop any intervals pixel_drawer may have started
-            try { for (let i = 1; i < 99999; i++) { clearInterval(i); clearTimeout(i); } } catch(e) {}
             console.log('[omni] pixel_drawer GUI cleaned');
         }
         try{ delete window.__garticPixelStandalone; }catch(e){}
@@ -1000,6 +1103,40 @@
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
     else setTimeout(boot, 400);
+
+    // Visual debug badge — shows WS/mywsid status for mobile users without console
+    function showDebugBadge() {
+        try {
+            if (document.getElementById('omni-debug-badge')) return;
+            const badge = document.createElement('div');
+            badge.id = 'omni-debug-badge';
+            badge.style.cssText = 'position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:2147483647;padding:4px 10px;border-radius:12px;font:bold 10px monospace;color:#fff;display:flex;align-items:center;gap:6px;pointer-events:none;';
+            document.body.appendChild(badge);
+            function update() {
+                const sock = w.wsHubGetSocket && w.wsHubGetSocket();
+                const wsOpen = sock && sock.readyState === 1;
+                const sid = w.getMyWsId && w.getMyWsId();
+                const hasHub = !!(w.onWS && w.sendWS);
+                if (wsOpen && sid != null) {
+                    badge.style.background = '#27ae60';
+                    badge.textContent = 'WS:OPEN sid:' + sid;
+                } else if (wsOpen) {
+                    badge.style.background = '#e67e22';
+                    badge.textContent = 'WS:OPEN sid:NULL';
+                } else if (hasHub) {
+                    badge.style.background = '#c0392b';
+                    badge.textContent = 'WS:CLOSED hub:OK';
+                } else {
+                    badge.style.background = '#7f8c8d';
+                    badge.textContent = 'NO HUB';
+                }
+            }
+            update();
+            setInterval(update, 2000);
+        } catch(e) {}
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showDebugBadge);
+    else setTimeout(showDebugBadge, 500);
 
     console.log('[omni] loaded v2.0.0-rewrite');
 })();
