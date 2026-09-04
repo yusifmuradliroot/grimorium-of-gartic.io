@@ -793,6 +793,17 @@
     }
     function unloadPluginVM(pluginId){
         const vm = vmInstances[pluginId];
+        // pixel_drawer specific cleanup
+        if (pluginId === 'pixel_drawer') {
+            try { const el = document.getElementById('pd-toggle'); if (el) el.remove(); } catch(e) {}
+            try { const el = document.getElementById('pd-panel'); if (el) el.remove(); } catch(e) {}
+            try { const s = document.getElementById('pd-styles'); if (s) s.remove(); } catch(e) {}
+            try { if (typeof unsafeWindow !== 'undefined') { delete unsafeWindow.__pixelDrawer; delete unsafeWindow.__pixelDrawerOrbit; } } catch(e) {}
+            try { if (typeof unsafeWindow !== 'undefined' && typeof unsafeWindow.pixelDrawerStop === 'function') unsafeWindow.pixelDrawerStop(); } catch(e) {}
+            // Stop any intervals pixel_drawer may have started
+            try { for (let i = 1; i < 99999; i++) { clearInterval(i); clearTimeout(i); } } catch(e) {}
+            console.log('[omni] pixel_drawer GUI cleaned');
+        }
         try{ delete window.__garticPixelStandalone; }catch(e){}
         try{ delete window.__garticPixelLean; }catch(e){}
         try{ const uw=(typeof unsafeWindow!=='undefined'?unsafeWindow:window); if(uw!==window){ try{ delete uw.__garticPixelStandalone; }catch(e){} try{ delete uw.__garticPixelLean; }catch(e){} } }catch(e){}
@@ -802,7 +813,6 @@
             console.log('[omni] VM unloaded (no vm) ',pluginId);
             return;
         }
-        // Remove onWS listeners that were added by this VM
         try{
             if(vm.onWSListeners){
                 vm.onWSListeners.forEach(cb=>{
@@ -817,9 +827,6 @@
                 try{ delete vm.vmWindow[prop]; }catch(e){}
                 try{ if(vm.realWindow && vm.realWindow[prop]===vm.proxy[prop]) delete vm.realWindow[prop]; }catch(e){}
             });
-            // Try to remove onWS listeners that were added by this plugin
-            // We cannot know which listener, so we clear all and re-add loader's own if needed
-            // For now, just log — the Hub's listeners will be re-added on next load
         }catch(e){}
         delete vmInstances[pluginId];
         console.log('[omni] VM unloaded',pluginId);
