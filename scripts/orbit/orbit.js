@@ -837,14 +837,20 @@
         });
     }
 
+    function normalizePluginSelection(raw) {
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'string') { try { return JSON.parse(raw); } catch (e) { return []; } }
+        if (raw && typeof raw.then === 'function') return null; // needs async
+        return [];
+    }
+
     function showPluginMenu(onDone) {
         injectStyles();
-        // Close settings panel properly before showing plugin menu
         const settingsPanel = document.getElementById('omni-settings-panel');
         if (settingsPanel) settingsPanel.style.setProperty('display','none','important');
         const overlay = document.createElement('div');
         overlay.id = 'omni-overlay';
-        overlay.style.zIndex = '2147483648'; // higher than settings
+        overlay.style.zIndex = '2147483648';
         overlay.innerHTML = `
             <div id="omni-card">
                 <div id="omni-head"><span>Plugins</span><span data-omni-action="close-overlay" style="cursor:pointer;font-size:20px;">×</span></div>
@@ -861,48 +867,37 @@
         ensureBody(() => { document.body.appendChild(overlay); });
 
         const list = overlay.querySelector('#omni-plugin-list');
-        const stored = gGet(STORE_PLUGINS, null);
-        console.log('[orbit] showPluginMenu stored raw:', stored, 'type:', typeof stored, 'isPromise:', !!(stored && typeof stored.then === 'function'));
-        let selected = [];
-        const isPromise = stored && typeof stored.then === 'function';
+        const raw = gGet(STORE_PLUGINS, null);
+        const isPromise = raw && typeof raw.then === 'function';
+        console.log('[orbit] showPluginMenu raw:', raw, 'type:', typeof raw, 'isPromise:', isPromise);
 
         function render(selectedArr) {
             try {
-                console.log('[orbit] render called with', selectedArr);
                 const validIds = new Set(PLUGINS.map(p => p.id));
-                let filtered = [];
-                try {
-                    filtered = (selectedArr || []).filter(id => validIds.has(id));
-                } catch(e) { console.error('[orbit] filter fail', e); filtered = []; }
-                // For backward compat, if stored was string not array, handle
-                if (!Array.isArray(selectedArr)) {
-                    console.warn('[orbit] selectedArr not array, was:', typeof selectedArr, selectedArr);
-                    try { selectedArr = JSON.parse(selectedArr); filtered = selectedArr.filter(id => validIds.has(id)); } catch(e) { filtered = []; }
-                }
-                console.log('[orbit] render plugins, stored:', selectedArr, 'filtered:', filtered, 'available:', [...validIds]);
+                const filtered = (selectedArr || []).filter(id => validIds.has(id));
+                console.log('[orbit] render selected:', selectedArr, '-> filtered:', filtered);
                 list.innerHTML = '';
                 PLUGINS.forEach(p => {
                     const row = document.createElement('label');
                     row.className = 'omni-plugin-row';
                     const checked = filtered.includes(p.id);
-                    console.log('[orbit] plugin', p.id, 'checked:', checked);
                     row.innerHTML = `<input type="checkbox" value="${p.id}" ${checked ? 'checked' : ''}><div class="omni-plugin-info"><div class="omni-plugin-name">${p.name}</div><div class="omni-plugin-desc">${p.description}</div><div style="font:10px monospace;color:#7f8c8d;">${p.id}</div></div>`;
-                    // Make row clickable, not just checkbox
                     row.addEventListener('click', (e) => {
                         if (e.target.tagName !== 'INPUT') {
                             const cb = row.querySelector('input');
                             cb.checked = !cb.checked;
-                            console.log('[orbit] row click toggled', p.id, cb.checked);
                         }
                     });
                     list.appendChild(row);
                 });
-                console.log('[orbit] plugin menu rendered', PLUGINS.length, 'plugins');
             } catch(e) { console.error('[orbit] render fail', e); }
         }
 
-        if (isPromise) Promise.resolve(stored).then(s => { try { selected = s ? JSON.parse(s) : []; } catch (e) { selected = []; } render(selected); });
-        else { try { selected = stored ? JSON.parse(stored) : []; } catch (e) { selected = []; } render(selected); }
+        if (isPromise) {
+            Promise.resolve(raw).then(s => { render(normalizePluginSelection(s)); });
+        } else {
+            render(normalizePluginSelection(raw));
+        }
 
         overlay.addEventListener('click', (e) => {
             const action = e.target.closest('[data-omni-action]');
@@ -920,12 +915,10 @@
                     const newSet = new Set(checked);
                     prevSet.forEach(id => {
                         if (!newSet.has(id)) {
-                            // VM unload
                             try{ unloadPluginVM(id); }catch(e){}
                             if (id === 'test-payload') {
                                 const el = document.getElementById('gartic-test-working');
                                 if (el) el.remove();
-                                // VM already cleared, but also clear global flag for non-VM fallback
                                 try{ delete window.__garticTestPayloadLoaded; }catch(e){}
                                 try{ if(vmInstances[id]) delete vmInstances[id]; }catch(e){}
                             }
@@ -943,26 +936,24 @@
                     }
                     next();
                 }
-                if (isPrevPromise) Promise.resolve(prevRaw).then(v => { let ps = []; try { ps = v ? JSON.parse(v) : []; } catch (ex) {} doInstall(ps); });
-                else { let ps = []; try { ps = prevRaw ? JSON.parse(prevRaw) : []; } catch (ex) {} doInstall(ps); }
+                if (isPrevPromise) Promise.resolve(prevRaw).then(v => doInstall(normalizePluginSelection(v)));
+                else doInstall(normalizePluginSelection(prevRaw));
             }
         });
     }
 
     function loadSelectedPlugins() {
-        const stored = gGet(STORE_PLUGINS, null);
-        const isPromise = stored && typeof stored.then === 'function';
+        const raw = gGet(STORE_PLUGINS, null);
+        const isPromise = raw && typeof raw.then === 'function';
         function doLoad(sel) {
             if (!sel || !sel.length) { console.log('[orbit] doLoad: no selection'); return; }
-            // Filter to valid ids only, ignore old 'pixel','text' that no longer exist
             const valid = new Set(PLUGINS.map(p => p.id));
             const filtered = sel.filter(id => valid.has(id));
-            if (filtered.length !== sel.length) console.log('[orbit] doLoad filtered', sel, '->', filtered);
             console.log('[orbit] doLoad loading', filtered);
-            filtered.forEach(id => { const plug = PLUGINS.find(p => p.id === id); if (plug) { console.log('[orbit] loading plugin', id); loadPlugin(plug, () => { console.log('[orbit] plugin loaded', id); }); } else console.warn('[orbit] plugin not found', id); });
+            filtered.forEach(id => { const plug = PLUGINS.find(p => p.id === id); if (plug) loadPlugin(plug, () => console.log('[orbit] plugin loaded', id)); });
         }
-        if (isPromise) Promise.resolve(stored).then(s => { try { doLoad(s ? JSON.parse(s) : null); } catch (e) {} });
-        else { try { doLoad(stored ? JSON.parse(stored) : null); } catch (e) {} }
+        if (isPromise) Promise.resolve(raw).then(s => doLoad(normalizePluginSelection(s)));
+        else doLoad(normalizePluginSelection(raw));
     }
 
     function boot() {
