@@ -24,22 +24,13 @@
             version: '1.0'
         },
         {
-            id: 'pixel',
-            name: 'Pixel Bot',
-            description: 'Pixel drawing — Omni-native, 770x450',
-            url: 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@main/scripts/pixel.user.js',
-            fallback: 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/main/scripts/pixel.user.js',
-            mustContain: '__omniWsHub',
-            version: '2.1-omni'
-        },
-        {
-            id: 'text',
-            name: 'Text Bot',
-            description: 'Text drawing — vector skeleton, pen [2], 770x450',
-            url: 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@main/scripts/gartic-text-bot.user.js',
-            fallback: 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/main/scripts/gartic-text-bot.user.js',
-            mustContain: 'TextEngine',
-            version: '2.0-omni'
+            id: 'pixel_drawer',
+            name: 'Pixel Drawer',
+            description: 'Pixel drawing — nerf, Orbit API, max 32, 250ms',
+            url: 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@main/scripts/plugins/pixel_drawer.js',
+            fallback: 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/main/scripts/plugins/pixel_drawer.js',
+            mustContain: 'pixel_drawer',
+            version: '1.0-nerf'
         }
     ];
 
