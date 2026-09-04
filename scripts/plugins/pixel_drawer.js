@@ -12,7 +12,7 @@
     let Orbit = w.Orbit;
     let retries = 0;
     function getOrbit() {
-        if (w.Orbit && typeof w.Orbit.verify === 'function' && w.__orbitCore) return w.Orbit;
+        if (w.Orbit && typeof w.Orbit.verify === 'function') return w.Orbit;
         return null;
     }
     Orbit = getOrbit();
