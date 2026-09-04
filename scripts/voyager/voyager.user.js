@@ -14,10 +14,10 @@
     'use strict';
 
     const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) ? GM_info.script.version : '1.0.0';
-    const VOYAGER_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@main/scripts/voyager/voyager.user.js';
-    const VOYAGER_FALLBACK = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/main/scripts/voyager/voyager.user.js';
-    const ORBIT_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@main/scripts/orbit/orbit.js';
-    const ORBIT_FALLBACK = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/main/scripts/orbit/orbit.js';
+    const VOYAGER_URL = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/main/scripts/voyager/voyager.user.js';
+    const VOYAGER_FALLBACK = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@main/scripts/voyager/voyager.user.js';
+    const ORBIT_URL = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/main/scripts/orbit/orbit.js';
+    const ORBIT_FALLBACK = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@main/scripts/orbit/orbit.js';
     const GITHUB_URL = 'https://github.com/yusifmuradliroot/grimorium-of-gartic.io/blob/main/scripts/voyager/voyager.user.js';
     const ORBIT_MUST_CONTAIN = 'orbitCore';
 
