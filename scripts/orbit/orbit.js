@@ -256,6 +256,68 @@
         console.log('%c[api] omni api v2 ready (session robust)','color:#f39c12;font-weight:bold');
     })();
 
+    // ============================================================
+    // 2b) ORBIT API — hybrid minimal (verify/hub/api/store/events)
+    //     Pluginler w.Orbit üzerinden erişir, direkt w.* minimal kullanım
+    // ============================================================
+    (function () {
+        if (w.Orbit) return;
+        const ORBIT_SECRET = 'orbit_v1_' + '9f3a7c2e1d5b8a4f'; // build'de obfuscate edilecek
+        w.__orbitAuth = {
+            verify: function (id) {
+                if (!id || !w.__orbitCore) return null;
+                // simple token: id + secret hash (gerçekte HMAC, şimdilik string)
+                return 'ok:' + id + ':' + ORBIT_SECRET.slice(0, 8);
+            }
+        };
+        w.Orbit = {
+            version: '1.0.0',
+            // verify — plugin ilk satırda çağırır, null ise abort
+            verify: function (id) { return w.__orbitAuth.verify(id); },
+            // hub — Voyager/Orbit singleton, plugin direkt w.sendWS kullanmamalı
+            hub: {
+                sendWS: function (d) { return w.sendWS(d); },
+                onWS: function (cb) { return w.onWS(cb); },
+                offWS: function (cb) { return w.offWS(cb); },
+                onWSSend: function (cb) { return w.onWSSend(cb); },
+                offWSSend: function (cb) { return w.offWSSend(cb); },
+                getSocket: function () { return w.wsHubGetSocket(); },
+                get verbose() { return w.wsHubVerbose; },
+                set verbose(v) { w.wsHubVerbose = v; }
+            },
+            // api — session/roster/drawTurn, plugin direkt w.get* kullanmamalı
+            api: {
+                getMyWsId: function () { return w.getMyWsId(); },
+                getMyId: function () { return w.getMyId(); },
+                getSession: function () { return w.getSession(); },
+                getPlayers: function () { return w.getPlayers(); },
+                getPlayer: function (id) { return w.getPlayer(id); },
+                getPlayerCount: function () { return w.getPlayerCount(); },
+                getDrawTurn: function () { return w.getDrawTurn(); },
+                selectWord: function (i) { return w.selectWord(i); },
+                onPkt: function (cb) { return w.onPkt(cb); },
+                offPkt: function (cb) { return w.offPkt(cb); }
+            },
+            // store — per-plugin prefix yok, global; VM'de window.GM_* prefix'li, w.Orbit.store global
+            store: {
+                get: function (k, d) { try { return gGet(k, d); } catch (e) { return d; } },
+                set: function (k, v) { try { gSet(k, v); } catch (e) {} }
+            },
+            // events — Orbit event bus (ws-session-*, api-*)
+            events: {
+                on: function (ev, cb) { w.addEventListener(ev, cb); },
+                off: function (ev, cb) { w.removeEventListener(ev, cb); },
+                emit: function (ev, detail) { try { w.dispatchEvent(new CustomEvent(ev, { detail: detail })); } catch (e) {} }
+            },
+            // exec — gerekirse Orbit VM'inde kod yürütme (pluginler nadir kullanır)
+            exec: {
+                run: function (code) { try { return Function(code)(); } catch (e) { console.error('[orbit] exec fail', e); return null; } }
+            }
+        };
+        // backward compat: w.sendWS etc. hala var, ama yeni pluginler w.Orbit.* kullanır
+        console.log('%c[orbit] Orbit API v1.0.0 ready — w.Orbit.{verify,hub,api,store,events,exec}', 'color:#8e44ad;font-weight:bold');
+    })();
+
     function isFirstTime() {
         try {
             const w = gGet(STORE_WELCOME, null);
