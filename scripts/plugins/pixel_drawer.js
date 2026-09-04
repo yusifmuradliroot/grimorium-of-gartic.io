@@ -203,7 +203,7 @@
         document.addEventListener('keydown', e => { if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.altKey && !e.metaKey) { const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return; show(!isOpen); } });
         updateButtons();
     }
-    function show(o) { if (!panel) return; isOpen = !!o; panel.style.display = isOpen ? 'block' : 'none'; toggleBtn.style.display = isOpen ? 'none' : 'block'; }
+    function show(o) { if (!panel || !toggleBtn) { console.warn('[pixel_drawer] show: panel or toggleBtn missing', !!panel, !!toggleBtn); return; } isOpen = !!o; panel.style.display = isOpen ? 'block' : 'none'; toggleBtn.style.display = isOpen ? 'none' : 'block'; toggleBtn.style.visibility = 'visible'; console.log('[pixel_drawer] show', o, 'panel', panel.style.display, 'toggle', toggleBtn.style.display); }
     function setStatus(m) { if (statusEl) statusEl.textContent = m; }
     function updateButtons() { if (!startBtn) return; startBtn.disabled = !state.processed || state.drawing || !state.turnActive; stopBtn.disabled = !state.drawing; clearBtn.disabled = !state.turnActive; }
     function updateProgress() { if (fillEl) fillEl.style.width = state.total ? (state.idx / state.total * 100) + '%' : '0%'; }
@@ -224,5 +224,22 @@
     }
     w.pixelDrawerStop = () => { if (state.drawing) halt('Durduruldu'); };
     w.pixelDrawerState = () => ({ drawing: state.drawing, sent: state.idx, total: state.total });
-    (function boot() { const start = () => { ensureUI(); show(false); init(); }; if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start(); })();
+    (function boot() {
+        const start = () => {
+            console.log('[pixel_drawer] boot start, Orbit:', !!w.Orbit, 'verify:', typeof w.Orbit?.verify);
+            ensureUI();
+            console.log('[pixel_drawer] UI ensured, panel:', !!panel, 'toggleBtn:', !!toggleBtn);
+            show(false);
+            init();
+            console.log('[pixel_drawer] init done, turnActive:', state.turnActive);
+            // Force show toggle button for debugging
+            if (toggleBtn) {
+                toggleBtn.style.display = 'block';
+                toggleBtn.style.visibility = 'visible';
+                console.log('[pixel_drawer] toggleBtn forced visible');
+            }
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+        else start();
+    })();
 })();

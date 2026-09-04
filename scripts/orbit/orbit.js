@@ -307,6 +307,7 @@
         };
         // backward compat: w.sendWS etc. hala var, ama yeni pluginler w.Orbit.* kullanır
         console.log('%c[orbit] Orbit API v1.0.0 ready — w.Orbit.{verify,hub,api,store,events,exec}', 'color:#8e44ad;font-weight:bold');
+        console.log('[orbit] Orbit full ready, PLUGINS:', PLUGINS.map(p=>p.id).join(', '));
     })();
 
     function isFirstTime() {
@@ -665,8 +666,15 @@
             return;
         }
 
-        // Outside click to close panel
+        // Outside click to close panel — but not when plugin menu (omni-overlay) is open
         if (panel && (panel.style.getPropertyValue('display')==='block' || panel.style.display==='block')) {
+            const overlay = document.getElementById('omni-overlay');
+            if (overlay && overlay.style.display !== 'none') {
+                // plugin menu is open, don't close settings panel (it's already hidden)
+                return;
+            }
+            // also ignore clicks inside the overlay
+            if (overlay && overlay.contains(e.target)) return;
             panel.style.setProperty('display','none','important');
         }
     }, true); // capture: true ensures we catch events before Gartic.io handlers stop propagation
@@ -830,8 +838,12 @@
 
     function showPluginMenu(onDone) {
         injectStyles();
+        // Close settings panel properly before showing plugin menu
+        const settingsPanel = document.getElementById('omni-settings-panel');
+        if (settingsPanel) settingsPanel.style.setProperty('display','none','important');
         const overlay = document.createElement('div');
         overlay.id = 'omni-overlay';
+        overlay.style.zIndex = '2147483648'; // higher than settings
         overlay.innerHTML = `
             <div id="omni-card">
                 <div id="omni-head"><span>Plugins</span><span data-omni-action="close-overlay" style="cursor:pointer;font-size:20px;">×</span></div>
