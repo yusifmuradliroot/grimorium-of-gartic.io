@@ -36,7 +36,11 @@
     function handleMessage(msg) {
         if (typeof msg !== 'string') return;
         if (msg === '40' || msg.startsWith('40{')) { sessionOpen = true; return; }
-        if (msg === '41') { sessionOpen = false; mywsid = null; return; }
+        if (msg === '41') {
+            sessionOpen = false;
+            // mywsid'yi SIFIRLAMA — 41 gereksiz gelir, mywsid zaten dogru
+            return;
+        }
         if (!msg.startsWith('42[')) return;
         let data;
         try { data = JSON.parse(msg.slice(2)); } catch (e) { return; }
@@ -45,7 +49,7 @@
         if (code === '5') {
             sessionOpen = true;
             if (Number.isFinite(data[2])) setMyWsId(data[2]);
-            else if (data[2] != null) setMyWsId(Number(data[2]));
+            else if (data[2] != null) { const n = Number(data[2]); if (Number.isFinite(n)) setMyWsId(n); }
             if (data[1] != null && w.myid === undefined) w.myid = data[1];
         }
         if (code === '17') { sessionOpen = true; }
