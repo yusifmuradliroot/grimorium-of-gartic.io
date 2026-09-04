@@ -183,12 +183,25 @@
         }
         // Make Orbit global for other functions
         w.__pixelDrawerOrbit = Orbit;
-        // Orbit events üzerinden — direkt w.addEventListener değil, w.Orbit.events
+        // Listen via Orbit events
         try { Orbit.events.on('ws-session-open', () => { updateButtons(); setStatus(state.processed ? (state.turnActive ? 'Hazır (nerf)' : 'Sıra gelince bekle') : 'foto bekleniyor'); }); } catch(e) { console.error('[pixel_drawer] ws-session-open on fail', e); }
         try { Orbit.events.on('ws-session-close', () => { state.turnActive = false; if (state.drawing) halt('⚠ Oturum kapandı'); updateButtons(); }); } catch(e) {}
-        try { Orbit.events.on('api-draw-turn', handleDrawTurn); } catch(e) { console.error('[pixel_drawer] api-draw-turn on fail', e); }
-        // late turn check via Orbit API
-        setTimeout(() => { try { const t = Orbit.api.getDrawTurn(); if (t && t.active) { state.turnActive = true; updateButtons(); console.log('[pixel_drawer] late turn', t); } } catch (e) {} }, 1500);
+        try { Orbit.events.on('api-draw-turn', handleDrawTurn); console.log('[pixel_drawer] api-draw-turn listener registered'); } catch(e) { console.error('[pixel_drawer] api-draw-turn on fail', e); }
+        // Polling fallback: check getDrawTurn() every 2s to catch missed events
+        setInterval(() => {
+            try {
+                const t = Orbit.api.getDrawTurn();
+                const isActive = !!(t && t.active);
+                if (isActive !== state.turnActive) {
+                    state.turnActive = isActive;
+                    updateButtons();
+                    console.log('[pixel_drawer] polling turn change:', isActive, t);
+                    if (isActive && t.words && t.words.length) {
+                        setStatus('Sıra bizde! Manuel ▶ Çiz (nerf)');
+                    }
+                }
+            } catch (e) {}
+        }, 2000);
         console.log('%c[pixel_drawer] v1.0-nerf aktif — Orbit API, max 32, 250ms, burst 8, manuel', 'color:#e67e22;font-weight:bold');
     }
     function handleDrawTurn(e) {

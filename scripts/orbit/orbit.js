@@ -41,7 +41,8 @@
         return d;
     };
     const gSet = (k, v) => {
-        try { if (typeof GM_setValue === 'function') { GM_setValue(k, v); return; } } catch (e) {}
+        try { if (typeof GM_setValue === 'function') { GM_setValue(k, v); } } catch (e) {}
+        // Always also write to localStorage as backup (GM may return Promise on mobile)
         try { sandboxWin.localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) {}
     };
 
