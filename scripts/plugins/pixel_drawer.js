@@ -159,11 +159,16 @@
     }
     w.PixelDrawerEffort = { version: '1.0-nerf', planFromImage: (img, opts) => { try { return planFromImage(img, opts); } catch (e) { return { ok: false, error: String(e) }; } } };
 
-    // ——— pixel_drawer bot (nerf, Orbit API) ———
+    // ——— pixel_drawer bot (self-contained, Orbit Hub only for WS) ———
     const CFG = { PACKET_MS: 250, BURST: 8, BURST_PAUSE_MS: 600, JITTER_MS: 2, MAX_DRAW_S: 60 };
     const state = { processed: false, gw: 0, gh: 0, queue: [], total: 0, idx: 0, drawing: false, timer: null, nextAt: 0, drawStart: 0 };
+    let myWsId = null; // captured directly from WS packets
+    let wsOpen = false;
     let tickerWorker = null;
     let panel = null, toggleBtn = null, previewEl = null, fileEl = null, infoEl1 = null, infoEl2 = null, fillEl = null, startBtn = null, stopBtn = null, clearBtn = null, statusEl = null, isOpen = false;
+
+    function getSid() { return myWsId; }
+    function sendPacket(data) { return Orbit.hub.sendWS(data); }
 
     function init() {
         if (!Orbit || typeof Orbit.verify !== 'function') {
@@ -173,8 +178,41 @@
             if (!token || token.indexOf('pixel_drawer') === -1) return;
         }
         w.__pixelDrawerOrbit = Orbit;
-        // No turn detection — fully manual mode
-        console.log('%c[pixel_drawer] v1.1-manual aktif (no turn check)', 'color:#e67e22;font-weight:bold');
+
+        // SELF-CONTAINED: capture mywsid directly from WS packets
+        try {
+            Orbit.hub.onWS(function(msg) {
+                if (typeof msg !== 'string') return;
+                // Session open
+                if (msg === '40' || msg.startsWith('40{')) { wsOpen = true; return; }
+                // Session close
+                if (msg === '41') { wsOpen = false; myWsId = null; return; }
+                // Find JSON array in Socket.IO message
+                const arrIdx = msg.indexOf('42[');
+                const ackIdx = msg.indexOf('43[');
+                let start = -1;
+                if (arrIdx >= 0 && ackIdx >= 0) start = Math.min(arrIdx, ackIdx);
+                else if (arrIdx >= 0) start = arrIdx;
+                else if (ackIdx >= 0) start = ackIdx;
+                if (start < 0) return;
+                let data; try { data = JSON.parse(msg.slice(start + 1)); } catch(e) { return; }
+                if (!Array.isArray(data)) return;
+                const code = String(data[0]);
+                // E5: room info — mywsid is data[2]
+                if (code === '5') {
+                    if (data[2] != null) { myWsId = Number(data[2]); console.log('[pixel_drawer] mywsid:', myWsId); }
+                    wsOpen = true;
+                }
+                // E17: turn assign — extract mywsid from target if it matches
+                if (code === '17' && data[1] != null && myWsId == null) {
+                    // Can't extract from E17 alone, but note it
+                    console.log('[pixel_drawer] E17 received, target:', data[1], 'current sid:', myWsId);
+                }
+            });
+            console.log('[pixel_drawer] WS listener registered (self-contained mode)');
+        } catch(e) { console.error('[pixel_drawer] WS listener fail', e); }
+
+        console.log('%c[pixel_drawer] v1.2-manual (self-contained mywsid)', 'color:#e67e22;font-weight:bold');
     }
     function ensureTicker() {
         if (tickerWorker || typeof Worker === 'undefined') return;
@@ -186,36 +224,19 @@
     function scheduleNext() { state.timer = setTimeout(onTicker, Math.max(0, state.nextAt - Date.now())); }
     function startDrawing() {
         if (state.drawing || !state.processed) return;
-        let sid = Orbit.api.getMyWsId();
-        // Fallback: try w.mywsid, w.getMyWsId, or extract from active WS
-        if (sid == null && typeof w.mywsid !== 'undefined') sid = w.mywsid;
-        if (sid == null && typeof w.getMyWsId === 'function') sid = w.getMyWsId();
-        if (sid == null) {
-            // Last resort: check if WS is open and try to send anyway
-            const sock = Orbit.hub.getSocket();
-            if (sock && sock.readyState === 1) {
-                console.warn('[pixel_drawer] mywsid null but WS open, trying without sid');
-                // Try to find sid from recent packets or DOM
-                setStatus('mywsid yok — WS açık, gönderim deneniyor...');
-            } else {
-                setStatus('Oturum yok! Odada değilsin');
-                console.warn('[pixel_drawer] sid null, WS:', sock ? sock.readyState : 'no socket');
-                return;
-            }
-        }
+        const sid = getSid();
+        if (sid == null) { setStatus('mywsid yok — odaya gir, bekle'); console.warn('[pixel_drawer] sid null'); return; }
         state.drawing = true; state.idx = 0; state.nextAt = Date.now(); state.drawStart = Date.now();
         updateButtons(); startTicker(); onTicker();
-        console.log('%c[pixel_drawer] ▶ çizim başladı: ' + state.total + ' paket ~' + estSeconds(state.total).toFixed(1) + 'sn | ' + state.gw + 'x' + state.gh + ' | sid:' + sid, 'color:#e67e22;font-weight:bold');
+        console.log('%c[pixel_drawer] ▶ started: ' + state.total + ' pkts ~' + estSeconds(state.total).toFixed(1) + 's | sid:' + sid, 'color:#e67e22;font-weight:bold');
     }
     function onTicker() {
         if (!state.drawing) return; if (Date.now() < state.nextAt) return;
         if (Date.now() - state.drawStart > CFG.MAX_DRAW_S * 1000) { updateButtons(); halt('⏱ Süre doldu (' + state.idx + '/' + state.total + ')'); return; }
         if (state.idx >= state.total) { halt('✓ Tamamlandı! ' + state.total + ' paket'); return; }
-        let sid = Orbit.api.getMyWsId();
-        if (sid == null && typeof w.mywsid !== 'undefined') sid = w.mywsid;
-        if (sid == null && typeof w.getMyWsId === 'function') sid = w.getMyWsId();
-        if (typeof Orbit.hub.sendWS !== 'function' || sid == null) { halt('⚠ Bağlantı yok (sid null)'); return; }
-        if (!Orbit.hub.sendWS('42["10",' + sid + ',' + JSON.stringify(state.queue[state.idx].p) + ']')) { halt('⚠ Gönderim hatası'); return; }
+        const sid = getSid();
+        if (sid == null) { halt('⚠ sid kayboldu'); return; }
+        if (!sendPacket('42["10",' + sid + ',' + JSON.stringify(state.queue[state.idx].p) + ']')) { halt('⚠ Gönderim hatası'); return; }
         state.idx++; updateProgress(); setStatus('Çiziliyor... ' + state.idx + '/' + state.total);
         const now = Date.now(); if (state.nextAt < now - CFG.PACKET_MS * 8) state.nextAt = now;
         let gap = CFG.PACKET_MS + (state.idx % CFG.BURST === 0 ? CFG.BURST_PAUSE_MS : 0);
@@ -225,11 +246,9 @@
     function estSeconds(n) { if (n <= 1) return 0; const g = n - 1; return (g * CFG.PACKET_MS + Math.floor(g / CFG.BURST) * CFG.BURST_PAUSE_MS) / 1000; }
     function halt(msg) { stopTicker(); state.drawing = false; updateButtons(); setStatus(msg); }
     function clearCanvas() {
-        let sid = Orbit.api.getMyWsId();
-        if (sid == null && typeof w.mywsid !== 'undefined') sid = w.mywsid;
-        if (sid == null && typeof w.getMyWsId === 'function') sid = w.getMyWsId();
-        if (typeof Orbit.hub.sendWS !== 'function' || sid == null) { setStatus('Oturum yok!'); return; }
-        if (Orbit.hub.sendWS('42["10",' + sid + ',[4]]')) setStatus('Tuval temizlendi'); else setStatus('Gönderilemedi!');
+        const sid = getSid();
+        if (sid == null) { setStatus('mywsid yok!'); return; }
+        if (!sendPacket('42["10",' + sid + ',[4]]')) setStatus('Gönderilemedi!'); else setStatus('Tuval temizlendi');
     }
     function processImage(img) {
         const res = w.PixelDrawerEffort.planFromImage(img, { timing: { packetMs: CFG.PACKET_MS, burst: CFG.BURST, burstPauseMs: CFG.BURST_PAUSE_MS }, maxDrawS: CFG.MAX_DRAW_S });
