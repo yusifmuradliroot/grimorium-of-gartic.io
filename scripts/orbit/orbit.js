@@ -1,20 +1,3 @@
-// ==UserScript==
-// @name         Omni Orbit
-// @namespace    omni-orbit
-// @version      1.0.0
-// @description  Orbit — Voyager 2nd stage. Hub+API+GUI+Loader, VM isolated. Loaded by Voyager (fixed). Manual update via Voyager version check.
-// @match        https://gartic.io/*
-// @grant        GM_xmlhttpRequest
-// @grant        GM.xmlHttpRequest
-// @grant        GM_getValue
-// @grant        GM_setValue
-// @grant        GM.getValue
-// @grant        GM.setValue
-// @grant        unsafeWindow
-// @grant        GM_info
-// @run-at       document-start
-// ==/UserScript==
-
 // orbitCore — Voyager mustContain marker
 (function () {
     'use strict';
