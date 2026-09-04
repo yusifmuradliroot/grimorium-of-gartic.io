@@ -166,28 +166,67 @@
     let panel = null, toggleBtn = null, previewEl = null, fileEl = null, infoEl1 = null, infoEl2 = null, fillEl = null, startBtn = null, stopBtn = null, clearBtn = null, statusEl = null, isOpen = false;
 
     function init() {
-        // If Orbit was not ready at top, try again now
         if (!Orbit || typeof Orbit.verify !== 'function') {
             Orbit = w.Orbit || w.__pixelDrawerOrbit;
-            if (!Orbit) {
-                console.warn('[pixel_drawer] init: Orbit still not ready, retry in 500ms');
-                setTimeout(init, 500);
-                return;
-            }
+            if (!Orbit) { setTimeout(init, 500); return; }
             const token = Orbit.verify('pixel_drawer');
-            if (!token || token.indexOf('pixel_drawer') === -1) {
-                console.warn('[pixel_drawer] init verify fail');
-                return;
-            }
-            console.log('[pixel_drawer] init verify OK (deferred)');
+            if (!token || token.indexOf('pixel_drawer') === -1) return;
         }
-        // Make Orbit global for other functions
         w.__pixelDrawerOrbit = Orbit;
-        // Listen via Orbit events
-        try { Orbit.events.on('ws-session-open', () => { updateButtons(); setStatus(state.processed ? (state.turnActive ? 'Hazır (nerf)' : 'Sıra gelince bekle') : 'foto bekleniyor'); }); } catch(e) { console.error('[pixel_drawer] ws-session-open on fail', e); }
+
+        // PRIMARY: Listen to raw WS messages for E17 (turn assign) and E16 (draw turn)
+        // This is more reliable than depending on CustomEvent dispatch
+        try {
+            Orbit.hub.onWS(function(msg) {
+                if (typeof msg !== 'string') return;
+                if (!msg.startsWith('42[')) return;
+                var data; try { data = JSON.parse(msg.slice(2)); } catch(e) { return; }
+                if (!Array.isArray(data)) return;
+                var code = String(data[0]);
+                if (code === '17') {
+                    // Turn assign — check if it's for us
+                    var myId = Orbit.api.getMyId();
+                    var targetId = data[1];
+                    if (myId != null && targetId != null && String(targetId) === String(myId)) {
+                        if (!state.turnActive) {
+                            state.turnActive = true;
+                            updateButtons();
+                            setStatus('Sıra bizde! Manuel ▶ Çiz (nerf)');
+                            console.log('[pixel_drawer] E17 turn to ME, myid:', myId);
+                        }
+                    } else {
+                        if (state.turnActive) {
+                            state.turnActive = false;
+                            if (state.drawing) halt('Sıra başkasına geçti');
+                            updateButtons();
+                            console.log('[pixel_drawer] E17 turn to OTHER:', targetId);
+                        }
+                    }
+                }
+                if (code === '16') {
+                    // Draw turn with word choices
+                    var myId2 = Orbit.api.getMyId();
+                    if (myId2 != null) {
+                        state.turnActive = true;
+                        updateButtons();
+                        var words = [];
+                        for (var i = 1; i + 1 < data.length; i += 2) {
+                            if (typeof data[i] === 'string') words.push(data[i]);
+                        }
+                        if (words.length) setStatus('Sıra bizde! Manuel ▶ Çiz (nerf)');
+                        console.log('[pixel_drawer] E16 draw turn, words:', words.join(', '));
+                    }
+                }
+            });
+            console.log('[pixel_drawer] raw WS listener registered');
+        } catch(e) { console.error('[pixel_drawer] raw WS listener fail', e); }
+
+        // BACKUP: CustomEvent listeners
+        try { Orbit.events.on('ws-session-open', () => { updateButtons(); setStatus(state.processed ? (state.turnActive ? 'Hazır (nerf)' : 'Sıra gelince bekle') : 'foto bekleniyor'); }); } catch(e) {}
         try { Orbit.events.on('ws-session-close', () => { state.turnActive = false; if (state.drawing) halt('⚠ Oturum kapandı'); updateButtons(); }); } catch(e) {}
-        try { Orbit.events.on('api-draw-turn', handleDrawTurn); console.log('[pixel_drawer] api-draw-turn listener registered'); } catch(e) { console.error('[pixel_drawer] api-draw-turn on fail', e); }
-        // Polling fallback: check getDrawTurn() every 2s to catch missed events
+        try { Orbit.events.on('api-draw-turn', handleDrawTurn); } catch(e) {}
+
+        // Polling fallback: every 2s
         setInterval(() => {
             try {
                 const t = Orbit.api.getDrawTurn();
@@ -195,14 +234,13 @@
                 if (isActive !== state.turnActive) {
                     state.turnActive = isActive;
                     updateButtons();
-                    console.log('[pixel_drawer] polling turn change:', isActive, t);
-                    if (isActive && t.words && t.words.length) {
-                        setStatus('Sıra bizde! Manuel ▶ Çiz (nerf)');
-                    }
+                    console.log('[pixel_drawer] polling turn:', isActive);
+                    if (isActive) setStatus('Sıra bizde! Manuel ▶ Çiz (nerf)');
                 }
             } catch (e) {}
         }, 2000);
-        console.log('%c[pixel_drawer] v1.0-nerf aktif — Orbit API, max 32, 250ms, burst 8, manuel', 'color:#e67e22;font-weight:bold');
+
+        console.log('%c[pixel_drawer] v1.0-nerf aktif (raw WS + events + polling)', 'color:#e67e22;font-weight:bold');
     }
     function handleDrawTurn(e) {
         const info = e && e.detail; if (!info) return;
