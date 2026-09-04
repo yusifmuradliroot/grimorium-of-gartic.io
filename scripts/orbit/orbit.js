@@ -865,14 +865,25 @@
         const isPromise = stored && typeof stored.then === 'function';
 
         function render(selectedArr) {
+            // Filter old ids (e.g., 'pixel' -> 'pixel_drawer') for backward compat
+            const validIds = new Set(PLUGINS.map(p => p.id));
+            const filtered = selectedArr.filter(id => validIds.has(id));
+            // Map old 'pixel' to 'pixel_drawer' if needed (user had old selection)
+            if (selectedArr.includes('pixel') && validIds.has('pixel_drawer') && !filtered.includes('pixel_drawer')) {
+                // don't auto-check, just log for debugging
+                console.log('[orbit] old stored id pixel found, new is pixel_drawer');
+            }
+            console.log('[orbit] render plugins, stored:', selectedArr, 'filtered:', filtered, 'available:', [...validIds]);
             list.innerHTML = '';
             PLUGINS.forEach(p => {
                 const row = document.createElement('label');
                 row.className = 'omni-plugin-row';
-                const checked = selectedArr.includes(p.id);
+                const checked = filtered.includes(p.id);
                 row.innerHTML = `<input type="checkbox" value="${p.id}" ${checked ? 'checked' : ''}><div class="omni-plugin-info"><div class="omni-plugin-name">${p.name}</div><div class="omni-plugin-desc">${p.description}</div><div style="font:10px monospace;color:#7f8c8d;">${p.id}</div></div>`;
                 list.appendChild(row);
             });
+            // Also log to help debug mobile
+            console.log('[orbit] plugin menu rendered', PLUGINS.length, 'plugins');
         }
 
         if (isPromise) Promise.resolve(stored).then(s => { try { selected = s ? JSON.parse(s) : []; } catch (e) { selected = []; } render(selected); });
@@ -926,7 +937,15 @@
     function loadSelectedPlugins() {
         const stored = gGet(STORE_PLUGINS, null);
         const isPromise = stored && typeof stored.then === 'function';
-        function doLoad(sel) { if (!sel || !sel.length) return; sel.forEach(id => { const plug = PLUGINS.find(p => p.id === id); if (plug) loadPlugin(plug, () => {}); }); }
+        function doLoad(sel) {
+            if (!sel || !sel.length) { console.log('[orbit] doLoad: no selection'); return; }
+            // Filter to valid ids only, ignore old 'pixel','text' that no longer exist
+            const valid = new Set(PLUGINS.map(p => p.id));
+            const filtered = sel.filter(id => valid.has(id));
+            if (filtered.length !== sel.length) console.log('[orbit] doLoad filtered', sel, '->', filtered);
+            console.log('[orbit] doLoad loading', filtered);
+            filtered.forEach(id => { const plug = PLUGINS.find(p => p.id === id); if (plug) { console.log('[orbit] loading plugin', id); loadPlugin(plug, () => { console.log('[orbit] plugin loaded', id); }); } else console.warn('[orbit] plugin not found', id); });
+        }
         if (isPromise) Promise.resolve(stored).then(s => { try { doLoad(s ? JSON.parse(s) : null); } catch (e) {} });
         else { try { doLoad(stored ? JSON.parse(stored) : null); } catch (e) {} }
     }
