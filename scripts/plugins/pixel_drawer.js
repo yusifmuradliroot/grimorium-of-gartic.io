@@ -8,17 +8,64 @@
 
     // ——— Orbit verify ———
     // orbitCore + w.Orbit.verify yoksa Omni dışında çalışıyor → abort
-    if (!w.__orbitCore || !w.Orbit || typeof w.Orbit.verify !== 'function') {
-        console.warn('[pixel_drawer] Orbit verify yok — Omni dışında abort');
-        return;
+    // Mobile Firefox: Orbit may not be ready yet, retry 3 times
+    let Orbit = w.Orbit;
+    let retries = 0;
+    function getOrbit() {
+        if (w.Orbit && typeof w.Orbit.verify === 'function' && w.__orbitCore) return w.Orbit;
+        return null;
     }
-    const token = w.Orbit.verify('pixel_drawer');
-    if (!token || token.indexOf('pixel_drawer') === -1) {
-        console.warn('[pixel_drawer] verify fail → abort');
-        return;
+    Orbit = getOrbit();
+    if (!Orbit) {
+        console.warn('[pixel_drawer] Orbit not ready, retrying...');
+        let attempts = 0;
+        const retry = setInterval(() => {
+            attempts++;
+            Orbit = getOrbit();
+            if (Orbit) {
+                clearInterval(retry);
+                console.log('[pixel_drawer] Orbit ready after retry', attempts, '→ continuing');
+                // Re-check verify and continue init
+                const token2 = Orbit.verify('pixel_drawer');
+                if (!token2 || token2.indexOf('pixel_drawer') === -1) {
+                    console.warn('[pixel_drawer] verify fail after retry → abort');
+                    return;
+                }
+                console.log('[pixel_drawer] verify OK after retry');
+                // Continue with actual init (will be called via boot, but we need to re-init)
+                // For now, just store Orbit globally and let boot handle it
+                w.__pixelDrawerOrbit = Orbit;
+            } else if (attempts >= 10) {
+                clearInterval(retry);
+                console.warn('[pixel_drawer] Orbit verify yok — Omni dışında abort (after 10 retries)');
+            }
+        }, 300);
+        // Don't return immediately, let boot handle retry via w.__pixelDrawerOrbit
+        Orbit = w.Orbit; // try again, if still null, boot will handle
+        if (!Orbit || typeof Orbit.verify !== 'function') {
+            console.warn('[pixel_drawer] Orbit not ready at load, will retry in boot');
+            // Don't abort yet, let boot retry
+        }
     }
-    // verify OK — Orbit API üzerinden devam
-    const Orbit = w.Orbit;
+    if (Orbit) {
+        const token = Orbit.verify('pixel_drawer');
+        if (!token || token.indexOf('pixel_drawer') === -1) {
+            console.warn('[pixel_drawer] verify fail → abort');
+            return;
+        }
+        console.log('[pixel_drawer] verify OK');
+    } else {
+        // Will retry in boot, don't abort yet
+        console.log('[pixel_drawer] Orbit not yet, deferring verify to boot');
+        // Set a flag to retry in boot
+        w.__pixelDrawerNeedsRetry = true;
+    }
+    // verify OK — Orbit API üzerinden devam (or will be set in boot)
+    Orbit = Orbit || w.Orbit || w.__pixelDrawerOrbit;
+    if (!Orbit) {
+        console.warn('[pixel_drawer] no Orbit at top, will use w.Orbit in init');
+        // Don't return, let init handle it
+    }
 
     if (w.__pixelDrawer) return;
     w.__pixelDrawer = true;
@@ -119,10 +166,27 @@
     let panel = null, toggleBtn = null, previewEl = null, fileEl = null, infoEl1 = null, infoEl2 = null, fillEl = null, startBtn = null, stopBtn = null, clearBtn = null, statusEl = null, isOpen = false;
 
     function init() {
+        // If Orbit was not ready at top, try again now
+        if (!Orbit || typeof Orbit.verify !== 'function') {
+            Orbit = w.Orbit || w.__pixelDrawerOrbit;
+            if (!Orbit) {
+                console.warn('[pixel_drawer] init: Orbit still not ready, retry in 500ms');
+                setTimeout(init, 500);
+                return;
+            }
+            const token = Orbit.verify('pixel_drawer');
+            if (!token || token.indexOf('pixel_drawer') === -1) {
+                console.warn('[pixel_drawer] init verify fail');
+                return;
+            }
+            console.log('[pixel_drawer] init verify OK (deferred)');
+        }
+        // Make Orbit global for other functions
+        w.__pixelDrawerOrbit = Orbit;
         // Orbit events üzerinden — direkt w.addEventListener değil, w.Orbit.events
-        Orbit.events.on('ws-session-open', () => { updateButtons(); setStatus(state.processed ? (state.turnActive ? 'Hazır (nerf)' : 'Sıra gelince bekle') : 'foto bekleniyor'); });
-        Orbit.events.on('ws-session-close', () => { state.turnActive = false; if (state.drawing) halt('⚠ Oturum kapandı'); updateButtons(); });
-        Orbit.events.on('api-draw-turn', handleDrawTurn);
+        try { Orbit.events.on('ws-session-open', () => { updateButtons(); setStatus(state.processed ? (state.turnActive ? 'Hazır (nerf)' : 'Sıra gelince bekle') : 'foto bekleniyor'); }); } catch(e) { console.error('[pixel_drawer] ws-session-open on fail', e); }
+        try { Orbit.events.on('ws-session-close', () => { state.turnActive = false; if (state.drawing) halt('⚠ Oturum kapandı'); updateButtons(); }); } catch(e) {}
+        try { Orbit.events.on('api-draw-turn', handleDrawTurn); } catch(e) { console.error('[pixel_drawer] api-draw-turn on fail', e); }
         // late turn check via Orbit API
         setTimeout(() => { try { const t = Orbit.api.getDrawTurn(); if (t && t.active) { state.turnActive = true; updateButtons(); console.log('[pixel_drawer] late turn', t); } } catch (e) {} }, 1500);
         console.log('%c[pixel_drawer] v1.0-nerf aktif — Orbit API, max 32, 250ms, burst 8, manuel', 'color:#e67e22;font-weight:bold');
