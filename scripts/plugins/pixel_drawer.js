@@ -161,7 +161,7 @@
 
     // ——— pixel_drawer bot (nerf, Orbit API) ———
     const CFG = { PACKET_MS: 250, BURST: 8, BURST_PAUSE_MS: 600, JITTER_MS: 2, MAX_DRAW_S: 60 };
-    const state = { processed: false, gw: 0, gh: 0, queue: [], total: 0, idx: 0, drawing: false, timer: null, nextAt: 0, drawStart: 0, turnActive: false };
+    const state = { processed: false, gw: 0, gh: 0, queue: [], total: 0, idx: 0, drawing: false, timer: null, nextAt: 0, drawStart: 0 };
     let tickerWorker = null;
     let panel = null, toggleBtn = null, previewEl = null, fileEl = null, infoEl1 = null, infoEl2 = null, fillEl = null, startBtn = null, stopBtn = null, clearBtn = null, statusEl = null, isOpen = false;
 
@@ -173,83 +173,8 @@
             if (!token || token.indexOf('pixel_drawer') === -1) return;
         }
         w.__pixelDrawerOrbit = Orbit;
-
-        // PRIMARY: Listen to raw WS messages for E17 (turn assign) and E16 (draw turn)
-        // This is more reliable than depending on CustomEvent dispatch
-        try {
-            Orbit.hub.onWS(function(msg) {
-                if (typeof msg !== 'string') return;
-                if (!msg.startsWith('42[')) return;
-                var data; try { data = JSON.parse(msg.slice(2)); } catch(e) { return; }
-                if (!Array.isArray(data)) return;
-                var code = String(data[0]);
-                if (code === '17') {
-                    // Turn assign — check if it's for us
-                    var myId = Orbit.api.getMyId();
-                    var targetId = data[1];
-                    if (myId != null && targetId != null && String(targetId) === String(myId)) {
-                        if (!state.turnActive) {
-                            state.turnActive = true;
-                            updateButtons();
-                            setStatus('Sıra bizde! Manuel ▶ Çiz (nerf)');
-                            console.log('[pixel_drawer] E17 turn to ME, myid:', myId);
-                        }
-                    } else {
-                        if (state.turnActive) {
-                            state.turnActive = false;
-                            if (state.drawing) halt('Sıra başkasına geçti');
-                            updateButtons();
-                            console.log('[pixel_drawer] E17 turn to OTHER:', targetId);
-                        }
-                    }
-                }
-                if (code === '16') {
-                    // Draw turn with word choices
-                    var myId2 = Orbit.api.getMyId();
-                    if (myId2 != null) {
-                        state.turnActive = true;
-                        updateButtons();
-                        var words = [];
-                        for (var i = 1; i + 1 < data.length; i += 2) {
-                            if (typeof data[i] === 'string') words.push(data[i]);
-                        }
-                        if (words.length) setStatus('Sıra bizde! Manuel ▶ Çiz (nerf)');
-                        console.log('[pixel_drawer] E16 draw turn, words:', words.join(', '));
-                    }
-                }
-            });
-            console.log('[pixel_drawer] raw WS listener registered');
-        } catch(e) { console.error('[pixel_drawer] raw WS listener fail', e); }
-
-        // BACKUP: CustomEvent listeners
-        try { Orbit.events.on('ws-session-open', () => { updateButtons(); setStatus(state.processed ? (state.turnActive ? 'Hazır (nerf)' : 'Sıra gelince bekle') : 'foto bekleniyor'); }); } catch(e) {}
-        try { Orbit.events.on('ws-session-close', () => { state.turnActive = false; if (state.drawing) halt('⚠ Oturum kapandı'); updateButtons(); }); } catch(e) {}
-        try { Orbit.events.on('api-draw-turn', handleDrawTurn); } catch(e) {}
-
-        // Polling fallback: every 2s
-        setInterval(() => {
-            try {
-                const t = Orbit.api.getDrawTurn();
-                const isActive = !!(t && t.active);
-                if (isActive !== state.turnActive) {
-                    state.turnActive = isActive;
-                    updateButtons();
-                    console.log('[pixel_drawer] polling turn:', isActive);
-                    if (isActive) setStatus('Sıra bizde! Manuel ▶ Çiz (nerf)');
-                }
-            } catch (e) {}
-        }, 2000);
-
-        console.log('%c[pixel_drawer] v1.0-nerf aktif (raw WS + events + polling)', 'color:#e67e22;font-weight:bold');
-    }
-    function handleDrawTurn(e) {
-        const info = e && e.detail; if (!info) return;
-        if (!info.active) { if (state.turnActive) { state.turnActive = false; updateButtons(); } return; }
-        state.turnActive = true; updateButtons();
-        // nerf: auto-start YOK, sadece status güncelle, kullanıcı manuel başlatır
-        if (!info.words || !info.words.length) return;
-        setStatus('Sıra bizde! Manuel ▶ Çiz (nerf)');
-        console.log('[pixel_drawer] sıra bizde, words:', info.words.map(x => x.word).join(', '));
+        // No turn detection — fully manual mode
+        console.log('%c[pixel_drawer] v1.1-manual aktif (no turn check)', 'color:#e67e22;font-weight:bold');
     }
     function ensureTicker() {
         if (tickerWorker || typeof Worker === 'undefined') return;
@@ -261,15 +186,14 @@
     function scheduleNext() { state.timer = setTimeout(onTicker, Math.max(0, state.nextAt - Date.now())); }
     function startDrawing() {
         if (state.drawing || !state.processed) return;
-        const sid = Orbit.api.getMyWsId(); if (sid == null) { setStatus('Oturum yok! Odada değilsin'); console.warn('[pixel_drawer] sid null'); return; }
-        if (!state.turnActive) { setStatus('Sıra bizde değil — bekle'); return; }
+        const sid = Orbit.api.getMyWsId(); if (sid == null) { setStatus('Oturum yok! Odada değilsin'); return; }
         state.drawing = true; state.idx = 0; state.nextAt = Date.now(); state.drawStart = Date.now();
         updateButtons(); startTicker(); onTicker();
         console.log('%c[pixel_drawer] ▶ çizim başladı: ' + state.total + ' paket ~' + estSeconds(state.total).toFixed(1) + 'sn | ' + state.gw + 'x' + state.gh, 'color:#e67e22;font-weight:bold');
     }
     function onTicker() {
         if (!state.drawing) return; if (Date.now() < state.nextAt) return;
-        if (Date.now() - state.drawStart > CFG.MAX_DRAW_S * 1000) { state.turnActive = false; updateButtons(); halt('⏱ Süre doldu (' + state.idx + '/' + state.total + ')'); return; }
+        if (Date.now() - state.drawStart > CFG.MAX_DRAW_S * 1000) { updateButtons(); halt('⏱ Süre doldu (' + state.idx + '/' + state.total + ')'); return; }
         if (state.idx >= state.total) { halt('✓ Tamamlandı! ' + state.total + ' paket'); return; }
         const sid = Orbit.api.getMyWsId(); if (typeof Orbit.hub.sendWS !== 'function' || sid == null) { halt('⚠ Bağlantı yok'); return; }
         if (!Orbit.hub.sendWS('42["10",' + sid + ',' + JSON.stringify(state.queue[state.idx].p) + ']')) { halt('⚠ Gönderim hatası'); return; }
@@ -282,7 +206,6 @@
     function estSeconds(n) { if (n <= 1) return 0; const g = n - 1; return (g * CFG.PACKET_MS + Math.floor(g / CFG.BURST) * CFG.BURST_PAUSE_MS) / 1000; }
     function halt(msg) { stopTicker(); state.drawing = false; updateButtons(); setStatus(msg); }
     function clearCanvas() {
-        if (!state.turnActive) { setStatus('Sıra bizde değil!'); return; }
         const sid = Orbit.api.getMyWsId(); if (typeof Orbit.hub.sendWS !== 'function' || sid == null) { setStatus('Oturum yok!'); return; }
         if (Orbit.hub.sendWS('42["10",' + sid + ',[4]]')) setStatus('Tuval temizlendi'); else setStatus('Gönderilemedi!');
     }
@@ -321,7 +244,7 @@
         stopBtn = document.createElement('button'); stopBtn.id = 'pd-stop'; stopBtn.textContent = 'Durdur'; stopBtn.onclick = () => halt('Durduruldu');
         clearBtn = document.createElement('button'); clearBtn.id = 'pd-clear'; clearBtn.textContent = 'Sil'; clearBtn.onclick = clearCanvas;
         const row = document.createElement('div'); row.className = 'pd-row'; row.appendChild(startBtn); row.appendChild(stopBtn); row.appendChild(clearBtn);
-        statusEl = document.createElement('div'); statusEl.id = 'pd-status'; statusEl.textContent = 'Sıra sende iken manuel başlat (nerf)';
+        statusEl = document.createElement('div'); statusEl.id = 'pd-status'; statusEl.textContent = 'Fotoğraf seç ve ▶ Çiz ile gönder';
         body.appendChild(previewEl); body.appendChild(fileBtn); body.appendChild(infoEl1); body.appendChild(infoEl2); body.appendChild(bar); body.appendChild(row); body.appendChild(statusEl);
         panel.appendChild(head); panel.appendChild(body);
         toggleBtn = document.createElement('button'); toggleBtn.id = 'pd-toggle'; toggleBtn.textContent = 'Pixel Drawer [P]'; toggleBtn.onclick = () => show(!isOpen);
@@ -331,7 +254,7 @@
     }
     function show(o) { if (!panel || !toggleBtn) { console.warn('[pixel_drawer] show: panel or toggleBtn missing', !!panel, !!toggleBtn); return; } isOpen = !!o; panel.style.display = isOpen ? 'block' : 'none'; toggleBtn.style.display = isOpen ? 'none' : 'block'; toggleBtn.style.visibility = 'visible'; console.log('[pixel_drawer] show', o, 'panel', panel.style.display, 'toggle', toggleBtn.style.display); }
     function setStatus(m) { if (statusEl) statusEl.textContent = m; }
-    function updateButtons() { if (!startBtn) return; startBtn.disabled = !state.processed || state.drawing || !state.turnActive; stopBtn.disabled = !state.drawing; clearBtn.disabled = !state.turnActive; }
+    function updateButtons() { if (!startBtn) return; startBtn.disabled = !state.processed || state.drawing; stopBtn.disabled = !state.drawing; clearBtn.disabled = false; }
     function updateProgress() { if (fillEl) fillEl.style.width = state.total ? (state.idx / state.total * 100) + '%' : '0%'; }
     function handleFile() {
         const f = fileEl.files && fileEl.files[0]; if (!f) return;
@@ -346,7 +269,7 @@
         const sc = Math.min(120 / res.gw, 120 / res.gh); previewEl.style.width = Math.round(res.gw * sc) + 'px'; previewEl.style.height = Math.round(res.gh * sc) + 'px';
         infoEl1.textContent = res.gw + '×' + res.gh + ' • ' + res.meta.colors + ' renk • ' + res.meta.rectPackets + ' rect (nerf)';
         infoEl2.textContent = state.total + ' paket ~' + estSeconds(state.total).toFixed(1) + 'sn (nerf)';
-        updateProgress(); updateButtons(); setStatus(state.turnActive ? 'Hazır — manuel başlat' : 'Hazır — sıra gelince manuel');
+        updateProgress(); updateButtons(); setStatus('Hazır — ▶ Çiz ile gönder');
     }
     w.pixelDrawerStop = () => { if (state.drawing) halt('Durduruldu'); };
     w.pixelDrawerState = () => ({ drawing: state.drawing, sent: state.idx, total: state.total });
@@ -357,7 +280,7 @@
             console.log('[pixel_drawer] UI ensured, panel:', !!panel, 'toggleBtn:', !!toggleBtn, 'panelInDOM:', !!(panel && document.body.contains(panel)));
             try { show(false); } catch(e) {}
             try { init(); } catch(e) { console.error('[pixel_drawer] init fail', e); }
-            console.log('[pixel_drawer] init done, turnActive:', state.turnActive);
+            console.log('[pixel_drawer] init done');
             // Mobile: ensure toggle is visible and clickable
             setTimeout(() => {
                 if (toggleBtn) {
