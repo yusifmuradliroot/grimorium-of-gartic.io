@@ -861,29 +861,43 @@
 
         const list = overlay.querySelector('#omni-plugin-list');
         const stored = gGet(STORE_PLUGINS, null);
+        console.log('[orbit] showPluginMenu stored raw:', stored, 'type:', typeof stored, 'isPromise:', !!(stored && typeof stored.then === 'function'));
         let selected = [];
         const isPromise = stored && typeof stored.then === 'function';
 
         function render(selectedArr) {
-            // Filter old ids (e.g., 'pixel' -> 'pixel_drawer') for backward compat
-            const validIds = new Set(PLUGINS.map(p => p.id));
-            const filtered = selectedArr.filter(id => validIds.has(id));
-            // Map old 'pixel' to 'pixel_drawer' if needed (user had old selection)
-            if (selectedArr.includes('pixel') && validIds.has('pixel_drawer') && !filtered.includes('pixel_drawer')) {
-                // don't auto-check, just log for debugging
-                console.log('[orbit] old stored id pixel found, new is pixel_drawer');
-            }
-            console.log('[orbit] render plugins, stored:', selectedArr, 'filtered:', filtered, 'available:', [...validIds]);
-            list.innerHTML = '';
-            PLUGINS.forEach(p => {
-                const row = document.createElement('label');
-                row.className = 'omni-plugin-row';
-                const checked = filtered.includes(p.id);
-                row.innerHTML = `<input type="checkbox" value="${p.id}" ${checked ? 'checked' : ''}><div class="omni-plugin-info"><div class="omni-plugin-name">${p.name}</div><div class="omni-plugin-desc">${p.description}</div><div style="font:10px monospace;color:#7f8c8d;">${p.id}</div></div>`;
-                list.appendChild(row);
-            });
-            // Also log to help debug mobile
-            console.log('[orbit] plugin menu rendered', PLUGINS.length, 'plugins');
+            try {
+                console.log('[orbit] render called with', selectedArr);
+                const validIds = new Set(PLUGINS.map(p => p.id));
+                let filtered = [];
+                try {
+                    filtered = (selectedArr || []).filter(id => validIds.has(id));
+                } catch(e) { console.error('[orbit] filter fail', e); filtered = []; }
+                // For backward compat, if stored was string not array, handle
+                if (!Array.isArray(selectedArr)) {
+                    console.warn('[orbit] selectedArr not array, was:', typeof selectedArr, selectedArr);
+                    try { selectedArr = JSON.parse(selectedArr); filtered = selectedArr.filter(id => validIds.has(id)); } catch(e) { filtered = []; }
+                }
+                console.log('[orbit] render plugins, stored:', selectedArr, 'filtered:', filtered, 'available:', [...validIds]);
+                list.innerHTML = '';
+                PLUGINS.forEach(p => {
+                    const row = document.createElement('label');
+                    row.className = 'omni-plugin-row';
+                    const checked = filtered.includes(p.id);
+                    console.log('[orbit] plugin', p.id, 'checked:', checked);
+                    row.innerHTML = `<input type="checkbox" value="${p.id}" ${checked ? 'checked' : ''}><div class="omni-plugin-info"><div class="omni-plugin-name">${p.name}</div><div class="omni-plugin-desc">${p.description}</div><div style="font:10px monospace;color:#7f8c8d;">${p.id}</div></div>`;
+                    // Make row clickable, not just checkbox
+                    row.addEventListener('click', (e) => {
+                        if (e.target.tagName !== 'INPUT') {
+                            const cb = row.querySelector('input');
+                            cb.checked = !cb.checked;
+                            console.log('[orbit] row click toggled', p.id, cb.checked);
+                        }
+                    });
+                    list.appendChild(row);
+                });
+                console.log('[orbit] plugin menu rendered', PLUGINS.length, 'plugins');
+            } catch(e) { console.error('[orbit] render fail', e); }
         }
 
         if (isPromise) Promise.resolve(stored).then(s => { try { selected = s ? JSON.parse(s) : []; } catch (e) { selected = []; } render(selected); });
