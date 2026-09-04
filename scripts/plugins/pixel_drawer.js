@@ -178,9 +178,19 @@
     }
     // ——— GUI (Orbit GUI'sinden ayrı, kendi paneli) ———
     function ensureUI() {
-        if (panel || !document.body) return;
+        if (panel) return;
+        // Mobile Firefox: body may not be ready, wait
+        if (!document.body) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', ensureUI, { once: true });
+                return;
+            }
+            setTimeout(ensureUI, 300);
+            return;
+        }
         const s = document.createElement('style');
-        s.textContent = '#pd-toggle{position:fixed;left:14px;top:60px;z-index:2147483646;padding:8px 16px;background:#e67e22;color:#fff;border:none;border-radius:20px;font:bold 12px Arial;cursor:pointer}#pd-panel{position:fixed;top:60px;left:14px;z-index:2147483646;width:232px;background:#1e272e;border:1px solid #e67e22;border-radius:10px;overflow:hidden;display:none}#pd-head{display:flex;align-items:center;padding:8px 10px;background:#e67e22;font:bold 13px Arial;color:#fff}#pd-close{margin-left:auto;cursor:pointer}#pd-body{padding:10px;display:flex;flex-direction:column;gap:8px}#pd-preview{width:120px;height:120px;margin:0 auto;display:block;background:#141a1e;border:1px solid #34495e;border-radius:6px;image-rendering:pixelated}#pd-filebtn{display:block;text-align:center;padding:8px;background:#2c3e50;color:#ecf0f1;border:1px solid #e67e22;border-radius:6px;font:bold 12px Arial;cursor:pointer}#pd-file{display:none}.pd-info{font:11px Arial;color:#95a5a6;text-align:center}.pd-bar{height:8px;background:#141a1e;border:1px solid #34495e;border-radius:4px;overflow:hidden}#pd-fill{height:100%;width:0%;background:#e67e22}.pd-row{display:flex;gap:6px}.pd-row button{flex:1;padding:7px 0;border:none;border-radius:6px;color:#fff;font:bold 11px Arial;cursor:pointer}.pd-row button:disabled{opacity:.35}#pd-start{background:#e67e22}#pd-stop{background:#c0392b}#pd-clear{background:#7f8c8d}.pd-check{display:none}#pd-status{font:11px Arial;color:#b2bec3;text-align:center;min-height:14px}';
+        // Mobile-friendly: larger toggle, centered panel, responsive
+        s.textContent = '#pd-toggle{position:fixed;left:10px;top:50px;z-index:2147483646;padding:10px 18px;background:#e67e22;color:#fff;border:2px solid #fff;border-radius:24px;font:bold 13px Arial;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4);display:block!important;visibility:visible!important}#pd-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2147483646;width:300px;max-width:92vw;max-height:85vh;overflow:auto;background:#1e272e;border:2px solid #e67e22;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none}#pd-head{display:flex;align-items:center;padding:10px 12px;background:#e67e22;font:bold 14px Arial;color:#fff;position:sticky;top:0;z-index:1}#pd-close{margin-left:auto;cursor:pointer;font-size:20px;padding:0 6px}#pd-body{padding:12px;display:flex;flex-direction:column;gap:10px}#pd-preview{width:140px;height:140px;margin:0 auto;display:block;background:#141a1e;border:1px solid #34495e;border-radius:8px;image-rendering:pixelated}#pd-filebtn{display:block;text-align:center;padding:10px;background:#2c3e50;color:#ecf0f1;border:1px solid #e67e22;border-radius:8px;font:bold 13px Arial;cursor:pointer}#pd-file{display:none}.pd-info{font:12px Arial;color:#95a5a6;text-align:center}.pd-bar{height:10px;background:#141a1e;border:1px solid #34495e;border-radius:5px;overflow:hidden}#pd-fill{height:100%;width:0%;background:#e67e22;transition:width .2s}.pd-row{display:flex;gap:8px}.pd-row button{flex:1;padding:10px 0;border:none;border-radius:8px;color:#fff;font:bold 12px Arial;cursor:pointer;min-height:36px}.pd-row button:disabled{opacity:.35}#pd-start{background:#e67e22}#pd-stop{background:#c0392b}#pd-clear{background:#7f8c8d}.pd-check{display:none}#pd-status{font:12px Arial;color:#b2bec3;text-align:center;min-height:16px;line-height:1.4}@media(max-width:480px){#pd-toggle{left:8px;top:8px;font-size:12px;padding:8px 14px}#pd-panel{width:96vw;top:50%;left:50%;transform:translate(-50%,-50%)}}';
         document.head.appendChild(s);
         panel = document.createElement('div'); panel.id = 'pd-panel';
         const head = document.createElement('div'); head.id = 'pd-head'; head.textContent = 'PIXEL_DRAWER (NERF)'; const close = document.createElement('span'); close.id = 'pd-close'; close.textContent = '×'; close.onclick = () => show(false); head.appendChild(close);
@@ -226,20 +236,31 @@
     w.pixelDrawerState = () => ({ drawing: state.drawing, sent: state.idx, total: state.total });
     (function boot() {
         const start = () => {
-            console.log('[pixel_drawer] boot start, Orbit:', !!w.Orbit, 'verify:', typeof w.Orbit?.verify);
-            ensureUI();
-            console.log('[pixel_drawer] UI ensured, panel:', !!panel, 'toggleBtn:', !!toggleBtn);
-            show(false);
-            init();
+            console.log('[pixel_drawer] boot start, Orbit:', !!w.Orbit, 'verify:', typeof w.Orbit?.verify, 'body:', !!document.body, 'readyState:', document.readyState);
+            try { ensureUI(); } catch(e) { console.error('[pixel_drawer] ensureUI fail', e); }
+            console.log('[pixel_drawer] UI ensured, panel:', !!panel, 'toggleBtn:', !!toggleBtn, 'panelInDOM:', !!(panel && document.body.contains(panel)));
+            try { show(false); } catch(e) {}
+            try { init(); } catch(e) { console.error('[pixel_drawer] init fail', e); }
             console.log('[pixel_drawer] init done, turnActive:', state.turnActive);
-            // Force show toggle button for debugging
-            if (toggleBtn) {
-                toggleBtn.style.display = 'block';
-                toggleBtn.style.visibility = 'visible';
-                console.log('[pixel_drawer] toggleBtn forced visible');
-            }
+            // Mobile: ensure toggle is visible and clickable
+            setTimeout(() => {
+                if (toggleBtn) {
+                    toggleBtn.style.display = 'block';
+                    toggleBtn.style.visibility = 'visible';
+                    toggleBtn.style.opacity = '1';
+                    toggleBtn.style.pointerEvents = 'auto';
+                    if (!document.body.contains(toggleBtn)) {
+                        try { document.body.appendChild(toggleBtn); } catch(e) {}
+                    }
+                    console.log('[pixel_drawer] toggleBtn final check, visible:', toggleBtn.offsetParent !== null, 'rect:', toggleBtn.getBoundingClientRect());
+                } else {
+                    console.warn('[pixel_drawer] toggleBtn still missing after boot');
+                    // Retry once
+                    try { ensureUI(); if (toggleBtn) toggleBtn.style.display = 'block'; } catch(e) {}
+                }
+            }, 500);
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-        else start();
+        else setTimeout(start, 300);
     })();
 })();
