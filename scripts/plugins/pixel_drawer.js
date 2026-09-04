@@ -1,5 +1,5 @@
-// pixel_drawer — standalone mywsid capture, manual send, nerfed limits
-// Abyss pixel-bot-standalone mantığı: kendi Hub/API, Voyager→Orbit→VM ile çalışır
+// pixel_drawer — Orbit API mywsid, manual send, nerfed limits
+// Orbit kernel'indeki mywsid'i kullanir, plugin reload'da kaybolmaz
 // Anti-theft: w.Orbit.verify('pixel_drawer') yoksa abort
 
 (function () {
@@ -22,66 +22,7 @@
     if (w.__pixelDrawer) return;
     w.__pixelDrawer = true;
 
-    // ——— Self-contained WS capture (standalone pixel-bot style) ———
-    // Always captures mywsid from E5 packets directly, regardless of Orbit API
-    let mywsid = null;
-    let sessionOpen = false;
-
-    function setMyWsId(id) {
-        if (id === mywsid) return;
-        const old = mywsid; mywsid = id;
-        console.log('%c[pixel_drawer] mywsid: ' + old + ' => ' + id, 'color:#e67e22;font-weight:bold');
-    }
-
-    function handleMessage(msg) {
-        if (typeof msg !== 'string') return;
-        if (msg === '40' || msg.startsWith('40{')) { sessionOpen = true; return; }
-        if (msg === '41') {
-            sessionOpen = false;
-            // mywsid'yi SIFIRLAMA — 41 gereksiz gelir, mywsid zaten dogru
-            return;
-        }
-        if (!msg.startsWith('42[')) return;
-        let data;
-        try { data = JSON.parse(msg.slice(2)); } catch (e) { return; }
-        if (!Array.isArray(data)) return;
-        const code = String(data[0]);
-        if (code === '5') {
-            sessionOpen = true;
-            if (Number.isFinite(data[2])) setMyWsId(data[2]);
-            else if (data[2] != null) { const n = Number(data[2]); if (Number.isFinite(n)) setMyWsId(n); }
-            if (data[1] != null && w.myid === undefined) w.myid = data[1];
-        }
-        if (code === '17') { sessionOpen = true; }
-        if (code === '16') { sessionOpen = true; }
-    }
-
-    // Register with Hub (Orbit or standalone)
-    function hookHub() {
-        if (typeof w.onWS === 'function') {
-            w.onWS(handleMessage);
-            console.log('[pixel_drawer] hooked into Hub onWS');
-            return true;
-        }
-        return false;
-    }
-    if (!hookHub()) {
-        // Hub not ready yet, retry
-        let hubAttempts = 0;
-        const hubRetry = setInterval(() => {
-            hubAttempts++;
-            if (hookHub()) { clearInterval(hubRetry); }
-            else if (hubAttempts >= 30) { clearInterval(hubRetry); console.warn('[pixel_drawer] Hub onWS not available after 30 attempts'); }
-        }, 200);
-    }
-
-    // Also hook into Orbit events as backup
-    if (Orbit && Orbit.events) {
-        try { Orbit.events.on('ws-session-open', () => { sessionOpen = true; }); } catch(e) {}
-        try { Orbit.events.on('ws-session-close', () => { sessionOpen = false; mywsid = null; }); } catch(e) {}
-    }
-
-    console.log('%c[pixel_drawer] v1.3-standalone — self-contained mywsid capture', 'color:#e67e22;font-weight:bold');
+    console.log('%c[pixel_drawer] v1.4 — Orbit API mywsid', 'color:#e67e22;font-weight:bold');
 
     // ——— Nerfed Effort ———
     const EFF_CFG = { CANDIDATES: [32, 24, 16], SNAP_BITS: 3, SRC_MAX: 512, GRACE_S: 5 };
@@ -172,13 +113,18 @@
     }
     w.PixelDrawerEffort = { version: '1.3-standalone', planFromImage: (img, opts) => { try { return planFromImage(img, opts); } catch (e) { return { ok: false, error: String(e) }; } } };
 
-    // ——— Bot (manual, self-contained mywsid) ———
+    // ——— Bot (manual, Orbit API mywsid) ———
     const CFG = { PACKET_MS: 250, BURST: 8, BURST_PAUSE_MS: 600, JITTER_MS: 2, MAX_DRAW_S: 60 };
     const state = { processed: false, gw: 0, gh: 0, queue: [], total: 0, idx: 0, drawing: false, timer: null, nextAt: 0, drawStart: 0 };
     let tickerWorker = null;
     let panel = null, toggleBtn = null, previewEl = null, fileEl = null, infoEl1 = null, infoEl2 = null, fillEl = null, startBtn = null, stopBtn = null, clearBtn = null, statusEl = null, isOpen = false;
 
-    function getSid() { return mywsid; }
+    function getSid() {
+        // Orbit API kernel'inden oku — plugin reload'da kaybolmaz
+        try { return Orbit.api.getMyWsId(); } catch(e) {}
+        try { return w.getMyWsId && w.getMyWsId(); } catch(e) {}
+        return null;
+    }
     function sendPacket(data) {
         if (typeof w.sendWS === 'function') return w.sendWS(data);
         return false;
@@ -275,14 +221,14 @@
         updateProgress(); updateButtons(); setStatus('Hazır — ▶ Çiz ile gönder');
     }
     w.pixelDrawerStop = () => { if (state.drawing) halt('Durduruldu'); };
-    w.pixelDrawerState = () => ({ drawing: state.drawing, sent: state.idx, total: state.total, mywsid: mywsid });
+    w.pixelDrawerState = () => ({ drawing: state.drawing, sent: state.idx, total: state.total, mywsid: getSid() });
 
     // ——— Boot ———
     (function boot() {
         const start = () => {
             try { ensureUI(); } catch(e) { console.error('[pixel_drawer] ensureUI fail', e); }
             try { show(false); } catch(e) {}
-            console.log('[pixel_drawer] boot done, mywsid:', mywsid, 'wsOpen:', sessionOpen);
+            console.log('[pixel_drawer] boot done, mywsid:', getSid());
             setTimeout(() => {
                 if (toggleBtn) { toggleBtn.style.display = 'block'; toggleBtn.style.visibility = 'visible'; toggleBtn.style.opacity = '1'; toggleBtn.style.pointerEvents = 'auto'; }
             }, 500);
