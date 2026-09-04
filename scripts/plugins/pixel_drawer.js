@@ -186,16 +186,35 @@
     function scheduleNext() { state.timer = setTimeout(onTicker, Math.max(0, state.nextAt - Date.now())); }
     function startDrawing() {
         if (state.drawing || !state.processed) return;
-        const sid = Orbit.api.getMyWsId(); if (sid == null) { setStatus('Oturum yok! Odada değilsin'); return; }
+        let sid = Orbit.api.getMyWsId();
+        // Fallback: try w.mywsid, w.getMyWsId, or extract from active WS
+        if (sid == null && typeof w.mywsid !== 'undefined') sid = w.mywsid;
+        if (sid == null && typeof w.getMyWsId === 'function') sid = w.getMyWsId();
+        if (sid == null) {
+            // Last resort: check if WS is open and try to send anyway
+            const sock = Orbit.hub.getSocket();
+            if (sock && sock.readyState === 1) {
+                console.warn('[pixel_drawer] mywsid null but WS open, trying without sid');
+                // Try to find sid from recent packets or DOM
+                setStatus('mywsid yok — WS açık, gönderim deneniyor...');
+            } else {
+                setStatus('Oturum yok! Odada değilsin');
+                console.warn('[pixel_drawer] sid null, WS:', sock ? sock.readyState : 'no socket');
+                return;
+            }
+        }
         state.drawing = true; state.idx = 0; state.nextAt = Date.now(); state.drawStart = Date.now();
         updateButtons(); startTicker(); onTicker();
-        console.log('%c[pixel_drawer] ▶ çizim başladı: ' + state.total + ' paket ~' + estSeconds(state.total).toFixed(1) + 'sn | ' + state.gw + 'x' + state.gh, 'color:#e67e22;font-weight:bold');
+        console.log('%c[pixel_drawer] ▶ çizim başladı: ' + state.total + ' paket ~' + estSeconds(state.total).toFixed(1) + 'sn | ' + state.gw + 'x' + state.gh + ' | sid:' + sid, 'color:#e67e22;font-weight:bold');
     }
     function onTicker() {
         if (!state.drawing) return; if (Date.now() < state.nextAt) return;
         if (Date.now() - state.drawStart > CFG.MAX_DRAW_S * 1000) { updateButtons(); halt('⏱ Süre doldu (' + state.idx + '/' + state.total + ')'); return; }
         if (state.idx >= state.total) { halt('✓ Tamamlandı! ' + state.total + ' paket'); return; }
-        const sid = Orbit.api.getMyWsId(); if (typeof Orbit.hub.sendWS !== 'function' || sid == null) { halt('⚠ Bağlantı yok'); return; }
+        let sid = Orbit.api.getMyWsId();
+        if (sid == null && typeof w.mywsid !== 'undefined') sid = w.mywsid;
+        if (sid == null && typeof w.getMyWsId === 'function') sid = w.getMyWsId();
+        if (typeof Orbit.hub.sendWS !== 'function' || sid == null) { halt('⚠ Bağlantı yok (sid null)'); return; }
         if (!Orbit.hub.sendWS('42["10",' + sid + ',' + JSON.stringify(state.queue[state.idx].p) + ']')) { halt('⚠ Gönderim hatası'); return; }
         state.idx++; updateProgress(); setStatus('Çiziliyor... ' + state.idx + '/' + state.total);
         const now = Date.now(); if (state.nextAt < now - CFG.PACKET_MS * 8) state.nextAt = now;
@@ -206,7 +225,10 @@
     function estSeconds(n) { if (n <= 1) return 0; const g = n - 1; return (g * CFG.PACKET_MS + Math.floor(g / CFG.BURST) * CFG.BURST_PAUSE_MS) / 1000; }
     function halt(msg) { stopTicker(); state.drawing = false; updateButtons(); setStatus(msg); }
     function clearCanvas() {
-        const sid = Orbit.api.getMyWsId(); if (typeof Orbit.hub.sendWS !== 'function' || sid == null) { setStatus('Oturum yok!'); return; }
+        let sid = Orbit.api.getMyWsId();
+        if (sid == null && typeof w.mywsid !== 'undefined') sid = w.mywsid;
+        if (sid == null && typeof w.getMyWsId === 'function') sid = w.getMyWsId();
+        if (typeof Orbit.hub.sendWS !== 'function' || sid == null) { setStatus('Oturum yok!'); return; }
         if (Orbit.hub.sendWS('42["10",' + sid + ',[4]]')) setStatus('Tuval temizlendi'); else setStatus('Gönderilemedi!');
     }
     function processImage(img) {
