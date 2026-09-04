@@ -256,7 +256,7 @@
         const ORBIT_SECRET = 'orbit_v1_' + '9f3a7c2e1d5b8a4f'; // build'de obfuscate edilecek
         w.__orbitAuth = {
             verify: function (id) {
-                if (!id || !w.__orbitCore) return null;
+                if (!id) return null;
                 // simple token: id + secret hash (gerçekte HMAC, şimdilik string)
                 return 'ok:' + id + ':' + ORBIT_SECRET.slice(0, 8);
             }
