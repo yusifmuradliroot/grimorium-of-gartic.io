@@ -38,3 +38,6 @@
     (adapt, don't blind-copy). NEVER copy repo-specific files across: this repo's LICENSE, TERMS,
     public docs stay here; abyss raw sources, dist output and private notes stay there.
     After a shared change, mirror in the same session and run `tools/check.py` on both.
+15. **Sweep before close.** Before committing a version bump or closing a work block,
+    glance over EVERY tracked file (`git ls-files`) for staleness against the change.
+    Docs, README, CHANGELOG and WHEREWEARE must match the code.
