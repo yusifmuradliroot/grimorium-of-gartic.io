@@ -1,4 +1,5 @@
 // pixel_drawer — photo to 8x8, 2-2-2 bit color, 1 packet per 250ms, minimal UI.
+// Runs on WsCore packet bus (dependency). Never touches raw WS.
 // __omniWsHub __omniHubReady — omni-aware marker, runs in VM.
 
 (function () {
@@ -12,6 +13,8 @@
     if (w.__pixelDrawer) return;
     w.__pixelDrawer = true;
 
+    function bus() { return w.WsCore || null; }
+
     const N = 8;
     const GAP = 250;
     let grid = null;
@@ -20,13 +23,14 @@
     let panel = null, toggleBtn = null, previewEl = null, fileEl = null, statusEl = null;
 
     function sid() {
-        try { return Orbit.api.getMyWsId(); } catch (e) { return null; }
+        const b = bus();
+        if (!b) return null;
+        try { return b.getSid(); } catch (e) { return null; }
     }
     function send(p) {
-        const s = sid();
-        if (s == null) return false;
-        try { return Orbit.hub.sendWS('42["10",' + s + ',' + JSON.stringify(p) + ']'); }
-        catch (e) { return false; }
+        const b = bus();
+        if (!b) return false;
+        try { return b.sendDraw(p); } catch (e) { return false; }
     }
     function q2(v) {
         const q = Math.round(v / 255 * 3);
