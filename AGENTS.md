@@ -10,8 +10,11 @@ Read these files IN ORDER before doing anything:
 4. `AI/LEARNINGS.md` — past decisions, mistakes, repo-specific knowledge
 
 ## Mandatory during work
-- Update `AI/WHEREWEARE.md` after every agreed step.
-- Append to `AI/LEARNINGS.md`: what you did, WHY, mistakes made, lessons learned.
+- Update `AI/WHEREWEARE.md` CONTINUOUSLY as you work — after every agreed step, BEFORE
+  committing/pushing. Rule of thumb: if this session died right now, the next AI must be able
+  to continue from the files alone. Never end a work block with a stale state file.
+- Append to `AI/LEARNINGS.md` whenever something notable happens: what you did, WHY,
+  mistakes made, lessons learned. Write it for the NEXT AI, not for the user.
 - Communicate with the user in **Turkish**, in short bite-sized steps. One decision at a time.
 
 ## Key facts
