@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      1.2
+// @version      1.3
 // @description  Omni loader — self-checks version, then fetches the framework and runs it.
 // @match        https://gartic.io/*
 // @grant        GM_xmlhttpRequest
@@ -17,7 +17,10 @@
     if (w.__omniVoyager) return;
     w.__omniVoyager = true;
 
-    const SELF_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/voyager/voyager.user.js';
+    const SELF_URLS = [
+        'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/voyager/voyager.user.js',
+        'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/voyager/voyager.user.js'
+    ];
 
     function ownVersion() {
         try {
@@ -112,15 +115,29 @@
     const mine = ownVersion();
     console.log('[omni] loader v' + mine + ' — self-check first');
     if (mine === null) { loadFramework(); return; }
-    fetchText(SELF_URL,
-        code => {
-            const remoteVer = parseVersion(code);
-            if (remoteVer && remoteVer !== mine) {
-                console.error('[omni] outdated: local v' + mine + ' vs remote v' + remoteVer);
-                showBlocker(remoteVer);
-                return;
-            }
-            loadFramework();
-        },
-        () => { loadFramework(); });
+    // Check ALL sources, take the max version — one stale cache can't hide an update.
+    const found = [];
+    let pending = SELF_URLS.length;
+    function cmp(a, b) {
+        const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+            const x = pa[i] || 0, y = pb[i] || 0;
+            if (x !== y) return x - y;
+        }
+        return 0;
+    }
+    function finish() {
+        if (--pending > 0) return;
+        let newest = null;
+        found.forEach(v => { if (v && (!newest || cmp(v, newest) > 0)) newest = v; });
+        if (newest && cmp(newest, mine) > 0) {
+            console.error('[omni] outdated: local v' + mine + ' vs remote v' + newest);
+            showBlocker(newest);
+            return;
+        }
+        loadFramework();
+    }
+    SELF_URLS.forEach(u => fetchText(u,
+        code => { const v = parseVersion(code); if (v) found.push(v); finish(); },
+        () => { finish(); }));
 })();
