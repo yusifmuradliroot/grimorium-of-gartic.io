@@ -37,10 +37,12 @@
 
     let pill = null;
     function ensureUI() {
-        if (pill || !document.body) return;
+        if (pill) return;
+        if (!document.body) { setTimeout(() => ensureUI(), 300); return; }
+        if (document.getElementById('ws-tools-sid')) return;
         pill = document.createElement('div');
         pill.id = 'ws-tools-sid';
-        pill.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:2147483646;padding:5px 10px;border-radius:10px;font:bold 11px monospace;color:#fff;background:#7f8c8d;pointer-events:none;';
+        pill.style.cssText = 'position:fixed !important;left:10px !important;bottom:10px !important;z-index:2147483646 !important;display:block !important;padding:5px 10px !important;border-radius:10px !important;font:bold 11px monospace !important;color:#fff !important;background:#7f8c8d !important;pointer-events:none !important;';
         document.body.appendChild(pill);
         paint();
     }
