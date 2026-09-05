@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '1.0';
+    const VERSION = '1.1';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -216,10 +216,16 @@
             if (typeof stop === 'function') stop();
         } catch (e) {}
     }
+    const loadedMeta = {};
     function loadPlugin(id, file, mustContain, cb) {
         const url = PLUGIN_BASE + file;
         fetchText(url,
-            code => { cb && cb(executePlugin(code, url, { id: id, mustContain: mustContain })); },
+            code => {
+                const ok = executePlugin(code, url, { id: id, mustContain: mustContain });
+                if (ok) loadedMeta[id] = { file: file, must: mustContain };
+                else delete loadedMeta[id];
+                cb && cb(ok);
+            },
             () => { cb && cb(false); });
     }
 
@@ -293,6 +299,7 @@
     }
     function boot() {
         showBadge();
+        ensureSettingsButton();
         const agreed = gGet(STORE_AGREED, false);
         if (agreed && typeof agreed.then === 'function') { agreed.then(a => { a ? loadSelected() : showMenu(); }); return; }
         if (agreed) loadSelected();
@@ -311,7 +318,92 @@
         else go(raw);
     }
 
-    // ============ 6) Debug badge (mobile has no console) ============
+    // ============ 6) SETTINGS: floating button + control panel ============
+    function ensureSettingsButton() {
+        ensureBody(() => {
+            if (document.getElementById('omni-settings-btn')) return;
+            const btn = document.createElement('button');
+            btn.id = 'omni-settings-btn';
+            btn.textContent = '⚙';
+            btn.style.cssText = 'position:fixed !important;bottom:18px !important;right:18px !important;z-index:2147483646 !important;width:44px !important;height:44px !important;background:#0f1419 !important;border:2px solid #fff !important;border-radius:50% !important;font-size:18px !important;cursor:pointer !important;box-shadow:0 4px 20px rgba(0,0,0,.35) !important;';
+            btn.addEventListener('click', () => toggleSettings());
+            document.body.appendChild(btn);
+        });
+    }
+    function toggleSettings() {
+        const old = document.getElementById('omni-settings');
+        if (old) { old.remove(); return; }
+        const overlay = document.createElement('div');
+        overlay.id = 'omni-settings';
+        overlay.style.cssText = 'position:fixed !important;inset:0 !important;z-index:2147483647 !important;background:rgba(0,0,0,.72) !important;display:flex !important;align-items:center !important;justify-content:center !important;font-family:Arial,sans-serif !important;';
+        const card = document.createElement('div');
+        card.style.cssText = 'width:400px !important;max-width:92vw !important;max-height:80vh !important;overflow:auto !important;background:#fff !important;border-radius:16px !important;color:#2c3e50 !important;';
+        const head = document.createElement('div');
+        head.style.cssText = 'padding:14px 18px !important;background:#0f1419 !important;color:#fff !important;font:700 14px Arial !important;display:flex !important;justify-content:space-between !important;align-items:center !important;';
+        head.innerHTML = '<span>Omni settings</span>';
+        const x = document.createElement('span');
+        x.textContent = '×';
+        x.style.cssText = 'cursor:pointer !important;font-size:20px !important;';
+        x.addEventListener('click', () => overlay.remove());
+        head.appendChild(x);
+        const body = document.createElement('div');
+        body.style.cssText = 'padding:18px !important;display:flex !important;flex-direction:column !important;gap:12px !important;font:13px Arial !important;';
+        const ver = document.createElement('div');
+        ver.style.cssText = 'color:#7f8c8d !important;font:12px monospace !important;';
+        ver.textContent = 'core v' + VERSION + ' | sid: ' + (w.getMyWsId() != null ? w.getMyWsId() : 'none');
+        body.appendChild(ver);
+        const ids = Object.keys(loadedMeta);
+        if (!ids.length) {
+            const none = document.createElement('div');
+            none.textContent = 'No plugins loaded.';
+            body.appendChild(none);
+        }
+        ids.forEach(id => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex !important;gap:8px !important;align-items:center !important;justify-content:space-between !important;';
+            const nm = document.createElement('span');
+            nm.textContent = id;
+            const btns = document.createElement('div');
+            btns.style.cssText = 'display:flex !important;gap:6px !important;';
+            const un = document.createElement('button');
+            un.textContent = 'Unload';
+            un.style.cssText = 'padding:6px 10px !important;border:1px solid #b2bec3 !important;background:#fff !important;border-radius:6px !important;font:bold 12px Arial !important;cursor:pointer !important;';
+            un.addEventListener('click', () => { unloadPlugin(id); delete loadedMeta[id]; row.remove(); });
+            const re = document.createElement('button');
+            re.textContent = 'Reload';
+            re.style.cssText = 'padding:6px 10px !important;border:none !important;background:#0f1419 !important;color:#fff !important;border-radius:6px !important;font:bold 12px Arial !important;cursor:pointer !important;';
+            re.addEventListener('click', () => {
+                const m = loadedMeta[id];
+                if (!m) return;
+                unloadPlugin(id);
+                loadPlugin(id, m.file, m.must, ok => { nm.textContent = id + (ok ? '' : ' (FAILED)'); });
+            });
+            btns.appendChild(un);
+            btns.appendChild(re);
+            row.appendChild(nm);
+            row.appendChild(btns);
+            body.appendChild(row);
+        });
+        const menuBtn = document.createElement('button');
+        menuBtn.textContent = 'Plugin menu';
+        menuBtn.style.cssText = 'padding:10px !important;border:1px solid #b2bec3 !important;background:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;';
+        menuBtn.addEventListener('click', () => { overlay.remove(); showMenu(); });
+        const resetBtn = document.createElement('button');
+        resetBtn.textContent = 'Reset Omni';
+        resetBtn.style.cssText = 'padding:10px !important;border:none !important;background:#c0392b !important;color:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;';
+        resetBtn.addEventListener('click', () => {
+            try { localStorage.removeItem(STORE_AGREED); localStorage.removeItem(STORE_PLUGINS); } catch (e) {}
+            try { location.reload(); } catch (err) {}
+        });
+        body.appendChild(menuBtn);
+        body.appendChild(resetBtn);
+        card.appendChild(head);
+        card.appendChild(body);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+    }
+
+    // ============ 7) Debug badge (mobile has no console) ============
     function showBadge() {
         ensureBody(() => {
             if (document.getElementById('omni-debug-badge')) return;
