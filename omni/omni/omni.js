@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '1.4';
+    const VERSION = '1.5';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -60,7 +60,10 @@
         inst.addEventListener('open', () => { activeWS = inst; console.log('%c[WS OPEN]', 'color:#27ae60;font-weight:bold'); }); // TEMP DEBUG
         inst.addEventListener('close', () => { if (activeWS === inst) activeWS = null; console.log('%c[WS CLOSE]', 'color:#c0392b'); }); // TEMP DEBUG
         inst.addEventListener('message', e => {
-            const msg = e.data;
+            let msg = e.data;
+            if (typeof msg !== 'string') {
+                try { msg = String(msg); } catch (err) { return; }
+            }
             console.log('%c[WS ←]', 'color:#2ecc71;font-weight:bold', msg); // TEMP DEBUG
             if (typeof msg === 'string' && msg.indexOf('42["5"') === 0) console.log('[omni] E5 dispatching to ' + listeners.length + ' listeners'); // TEMP DEBUG
             for (let i = 0; i < listeners.length; i++) try { listeners[i](msg); } catch (err) {}
@@ -322,7 +325,6 @@
         });
     }
     function boot() {
-        showBadge();
         ensureSettingsButton();
         const agreed = gGet(STORE_AGREED, false);
         if (agreed && typeof agreed.then === 'function') { agreed.then(a => { a ? loadSelected() : showMenu(); }); return; }
@@ -425,25 +427,6 @@
         card.appendChild(body);
         overlay.appendChild(card);
         document.body.appendChild(overlay);
-    }
-
-    // ============ 7) Debug badge (mobile has no console) ============
-    function showBadge() {
-        ensureBody(() => {
-            if (document.getElementById('omni-debug-badge')) return;
-            const badge = document.createElement('div');
-            badge.id = 'omni-debug-badge';
-            badge.style.cssText = 'position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:2147483646;padding:4px 10px;border-radius:12px;font:bold 10px monospace;color:#fff;pointer-events:none;';
-            document.body.appendChild(badge);
-            setInterval(() => {
-                const sock = w.wsHubGetSocket();
-                const open = sock && sock.readyState === 1;
-                const sid = w.getMyWsId();
-                if (open && sid != null) { badge.style.background = '#27ae60'; badge.textContent = 'WS:OPEN sid:' + sid; }
-                else if (open) { badge.style.background = '#e67e22'; badge.textContent = 'WS:OPEN sid:NULL'; }
-                else { badge.style.background = '#c0392b'; badge.textContent = 'WS:CLOSED'; }
-            }, 1000);
-        });
     }
 
     console.log('%c[omni] core v' + VERSION + ' ready', 'color:#8e44ad;font-weight:bold');

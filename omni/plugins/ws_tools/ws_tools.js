@@ -21,7 +21,9 @@
     }
 
     function inspect(msg, dir) {
-        if (typeof msg !== 'string') return;
+        if (typeof msg !== 'string') {
+            try { msg = String(msg); } catch (e) { return; }
+        }
         console.log('[ws_tools ' + dir + ']', msg.slice(0, 160));
         if (dir !== 'in') return;
         const at = msg.indexOf('42[');
@@ -33,9 +35,35 @@
         else if (data[1] != null && Number.isFinite(Number(data[1]))) writeSid(Number(data[1]), 'd1-fallback');
     }
 
+    let pill = null;
+    function ensureUI() {
+        if (pill || !document.body) return;
+        pill = document.createElement('div');
+        pill.id = 'ws-tools-sid';
+        pill.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:2147483646;padding:5px 10px;border-radius:10px;font:bold 11px monospace;color:#fff;background:#7f8c8d;pointer-events:none;';
+        document.body.appendChild(pill);
+        paint();
+    }
+    function paint() {
+        if (!pill) return;
+        let sid = null;
+        try { sid = Orbit.api.getMyWsId(); } catch (e) {}
+        if (sid != null) {
+            pill.style.background = '#27ae60';
+            pill.textContent = 'mywsid:' + sid;
+        } else {
+            pill.style.background = '#7f8c8d';
+            pill.textContent = 'mywsid:…';
+        }
+    }
+
     try { Orbit.hub.onWS(m => inspect(m, 'in')); } catch (e) {}
     try {
         if (typeof w.onWSSend === 'function') w.onWSSend(m => inspect(m, 'out'));
     } catch (e) {}
+    try { Orbit.events.on('mywsid-change', () => paint()); } catch (e) {}
+    setInterval(() => paint(), 2000);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => ensureUI());
+    else ensureUI();
     console.log('[ws_tools] logger + catcher active');
 })();
