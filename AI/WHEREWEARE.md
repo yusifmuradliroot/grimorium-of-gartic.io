@@ -26,7 +26,8 @@ Gartic.io scripting platform (SDK vision). Description: "Scripting platform for 
 - Two-repo sync active: `tools/check.py` on both sides, rule 14 in both RULES.md.
 
 ## In progress
-- (next AI: fill here)
+- DUAL-DEV until first stable: omni framework developed here AND in abyss (raw).
+  After first stable: normal flow resumes (abyss → forge → grimorium).
 
 ## Next
 - Fresh core code in `abyss` (raw voyager + omni framework, "Omni" branding everywhere).
