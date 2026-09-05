@@ -5,5 +5,5 @@
   "entry": "airbrush_drawer.js",
   "mustContain": "__airbrushDrawer",
   "dependencies": ["ws_core"],
-  "version": "1.4"
+  "version": "1.5"
 }
