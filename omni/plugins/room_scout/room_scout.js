@@ -18,6 +18,9 @@
     w.__roomScout = true;
 
     const LIST_URL = 'https://gartic.io/req/list';
+    let selLang = '', selSubj = '';
+    let langEl = null, subjEl = null;
+    const LANGMAP = {"langs": [{"id": 23, "name": "Azərbaycanca", "subjects": [1, 7]}, {"id": 45, "name": "Bahasa Indonesia", "subjects": [1, 7, 2, 3, 4, 16, 6, 26, 28, 35, 12, 31, 8, 14]}, {"id": 11, "name": "Čeština", "subjects": [1, 3, 2, 7, 4]}, {"id": 14, "name": "Deutsch", "subjects": [1, 3, 2, 7]}, {"id": 2, "name": "English", "subjects": [1, 3, 2, 4, 5, 6, 7, 16, 11, 14, 31, 19, 23, 26, 18, 35, 8, 12, 9, 37, 33]}, {"id": 3, "name": "Español", "subjects": [1, 3, 2, 4, 5, 6, 7, 37]}, {"id": 4, "name": "Français", "subjects": [1, 3, 2, 4, 5, 6, 7]}, {"id": 6, "name": "Italiano", "subjects": [1, 3, 2, 4, 5, 6, 7]}, {"id": 44, "name": "Magyar", "subjects": [1, 7]}, {"id": 18, "name": "Nederlands", "subjects": [1, 3, 2, 7]}, {"id": 10, "name": "Polski", "subjects": [1, 3, 2, 7]}, {"id": 1, "name": "Português", "subjects": [1, 3, 2, 4, 5, 6, 7, 31, 14, 16, 12, 17, 11, 8, 26, 23, 35, 18, 28, 9, 19, 32, 33, 37, 15, 27, 38, 13]}, {"id": 58, "name": "Română", "subjects": [1, 7]}, {"id": 22, "name": "Slovenčina", "subjects": [1, 3, 2, 7]}, {"id": 13, "name": "Tiếng Việt", "subjects": [1, 7]}, {"id": 8, "name": "Türkçe", "subjects": [1, 3, 2, 7, 4, 6, 16, 31, 14, 11, 5, 26]}, {"id": 21, "name": "български език", "subjects": [1, 3, 2, 7]}, {"id": 7, "name": "Русский", "subjects": [1, 3, 2, 7]}, {"id": 40, "name": "עברית", "subjects": [1, 7]}, {"id": 19, "name": "العربية", "subjects": [1, 7, 3]}, {"id": 34, "name": "فارسی", "subjects": [1, 7]}, {"id": 12, "name": "ภาษาไทย", "subjects": [1, 7, 2, 4, 3, 6]}, {"id": 16, "name": "中文 (简化字)", "subjects": [1, 3, 2, 7, 4, 6, 11, 31, 28]}, {"id": 9, "name": "中文 (臺灣)", "subjects": [1, 3, 2, 7, 4, 6, 31, 16, 28, 35]}, {"id": 17, "name": "中文 (香港)", "subjects": [1, 3, 2, 7, 4]}, {"id": 15, "name": "日本語", "subjects": [1, 7]}, {"id": 20, "name": "한국어", "subjects": [1, 3, 7]}], "subjects": {"30": "Others / Generic", "1": "General", "2": "Animals", "28": "Animes", "27": "Bands", "9": "Cartoons", "19": "Clash Royale", "38": "Crazy", "23": "Dota", "22": "Dragon Ball", "16": "Flags", "33": "FNAF", "4": "Foods", "17": "Football", "32": "Fortnite", "21": "Game of Thrones", "12": "Games", "37": "Halloween", "18": "Harry Potter", "6": "Jobs", "26": "Logos", "11": "LoL", "20": "Lord of Rings", "14": "Marvel / DC", "31": "Minecraft", "8": "Movies", "35": "Naruto", "3": "Objects", "13": "Personalities", "7": "Pokemon", "15": "Series", "10": "Songs", "29": "Sports", "34": "Star Wars", "25": "Streamers", "36": "The Sims", "5": "Verbs", "24": "Youtubers"}};
     const HIST_KEY = 'room_scout_history';
     const REFRESH_MS = 15000;
     let overlay = null, listEl = null, histEl = null, statusEl = null, timer = null;
@@ -41,18 +44,48 @@
         saveHist(code);
         location.href = '/' + code + '/viewer';
     }
+    function listURL() {
+        let u = LIST_URL + '?_=' + Date.now();
+        if (selLang !== '') u += '&language[]=' + encodeURIComponent(selLang);
+        if (selSubj !== '') u += '&subject[]=' + encodeURIComponent(selSubj);
+        return u;
+    }
     function fetchRooms(cb) {
         try {
             if (typeof GM_xmlhttpRequest === 'function') {
-                GM_xmlhttpRequest({ method: 'GET', url: LIST_URL + '?_=' + Date.now(), timeout: 10000,
+                GM_xmlhttpRequest({ method: 'GET', url: listURL(), timeout: 10000,
                     onload: r => {
                         try { cb(JSON.parse(r.responseText)); } catch (e) { cb(null); }
                     },
                     onerror: () => cb(null), ontimeout: () => cb(null) });
             } else {
-                fetch(LIST_URL + '?_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(cb).catch(() => cb(null));
+                fetch(listURL(), { cache: 'no-store' }).then(r => r.json()).then(cb).catch(() => cb(null));
             }
         } catch (e) { cb(null); }
+    }
+    function fillSubjects() {
+        if (!subjEl) return;
+        subjEl.innerHTML = '';
+        const all = document.createElement('option');
+        all.value = '';
+        all.textContent = 'All subjects';
+        subjEl.appendChild(all);
+        let ids = [];
+        if (selLang === '') {
+            ids = Object.keys(LANGMAP.subjects).map(Number);
+        } else {
+            const L = LANGMAP.langs.filter(l => String(l.id) === String(selLang))[0];
+            ids = L ? L.subjects.slice() : [];
+        }
+        ids.sort((a, b) => String(LANGMAP.subjects[a] || '').localeCompare(String(LANGMAP.subjects[b] || '')));
+        ids.forEach(id => {
+            if (!LANGMAP.subjects[id]) return;
+            const o = document.createElement('option');
+            o.value = String(id);
+            o.textContent = LANGMAP.subjects[id];
+            subjEl.appendChild(o);
+        });
+        selSubj = '';
     }
     function row(room) {
         const b = document.createElement('button');
@@ -119,6 +152,27 @@
         histTitle.textContent = 'Recent';
         histEl = document.createElement('div');
         histEl.style.cssText = 'display:flex !important;flex-wrap:wrap !important;gap:6px !important;';
+        const filt = document.createElement('div');
+        filt.style.cssText = 'display:flex !important;gap:8px !important;';
+        const selStyle = 'flex:1 !important;padding:9px !important;border:1px solid #34495e !important;background:#1e272e !important;color:#fff !important;border-radius:8px !important;font:13px Arial !important;';
+        langEl = document.createElement('select');
+        langEl.style.cssText = selStyle;
+        const la = document.createElement('option');
+        la.value = '';
+        la.textContent = 'All languages';
+        langEl.appendChild(la);
+        LANGMAP.langs.forEach(l => {
+            const o = document.createElement('option');
+            o.value = String(l.id);
+            o.textContent = l.name;
+            langEl.appendChild(o);
+        });
+        langEl.addEventListener('change', () => { selLang = langEl.value; fillSubjects(); render(); });
+        subjEl = document.createElement('select');
+        subjEl.style.cssText = selStyle;
+        subjEl.addEventListener('change', () => { selSubj = subjEl.value; render(); });
+        filt.appendChild(langEl);
+        filt.appendChild(subjEl);
         listEl = document.createElement('div');
         listEl.style.cssText = 'display:flex !important;flex-direction:column !important;gap:8px !important;';
         const bar = document.createElement('div');
@@ -134,12 +188,14 @@
         bar.appendChild(goBtn);
         card.appendChild(head);
         card.appendChild(statusEl);
+        card.appendChild(filt);
         card.appendChild(histTitle);
         card.appendChild(histEl);
         card.appendChild(listEl);
         card.appendChild(bar);
         overlay.appendChild(card);
         document.body.appendChild(overlay);
+        fillSubjects();
         render();
         timer = setInterval(render, REFRESH_MS);
     }
