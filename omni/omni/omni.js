@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '2.3';
+    const VERSION = '2.4';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -569,7 +569,7 @@
         body.style.cssText = 'padding:18px !important;display:flex !important;flex-direction:column !important;gap:12px !important;font:13px Arial !important;';
         const ver = document.createElement('div');
         ver.style.cssText = 'color:#7f8c8d !important;font:12px monospace !important;';
-        ver.textContent = 'core v' + VERSION + ' | sid: ' + (w.getMyWsId() != null ? w.getMyWsId() : 'none');
+        ver.textContent = 'core v' + VERSION;
         body.appendChild(ver);
         const ids = Object.keys(loadedMeta);
         if (!ids.length) {
