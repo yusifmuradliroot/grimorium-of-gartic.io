@@ -1,0 +1,9 @@
+{
+  "id": "airbrush_drawer",
+  "name": "Airbrush Drawer",
+  "description": "EXPERIMENTAL: photo colors reduced, contours drawn thin, regions flood-filled",
+  "entry": "airbrush_drawer.js",
+  "mustContain": "__airbrushDrawer",
+  "dependencies": ["ws_core"],
+  "version": "1.0"
+}
