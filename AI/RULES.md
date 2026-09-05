@@ -21,7 +21,11 @@
 9. **PUBLIC repo — zero private data.** Everything in this repo (including `AI/` notes) is visible
    to everyone. NEVER write: tokens, passwords, emails, personal details, or anything identifying
    beyond the public GitHub handle. Functional context only (e.g. "mobile, no console"), no specifics.
-10. **Context cues.** Short user sentences switch operating mode — record them in `WHEREWEARE.md`
+10. **Prune against bloat.** Keep `AI/` files short and current: compress old detail, move stale
+    entries out, delete dead files. Before any destructive cleanup, PROPOSE the list to the user
+    and execute only after approval. Rule of thumb: if a file doesn't help the next AI continue
+    work, it shouldn't exist.
+11. **Context cues.** Short user sentences switch operating mode — record them in `WHEREWEARE.md`
    under "User context" and obey until changed. Never ask again for a recorded cue:
    - "konsol erişimim yok" → user is on mobile: diagnose via visual feedback only (badges, on-screen
      status). Never say "check the console".
