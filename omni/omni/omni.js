@@ -6,10 +6,22 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '1.7';
+    const VERSION = '1.8';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
+    const STORE_THEME = 'omni_theme';
+    const THEMES = {
+        light: { card: '#ffffff', ink: '#2c3e50', ghost: '#ffffff', line: '#b2bec3' },
+        dark: { card: '#1e272e', ink: '#ecf0f1', ghost: '#2c3e50', line: '#7f8c8d' }
+    };
+    function th() {
+        try {
+            const t = gGet(STORE_THEME, 'light');
+            if (typeof t === 'string' && THEMES[t]) return THEMES[t];
+        } catch (e) {}
+        return THEMES.light;
+    }
 
     function gGet(k, d) {
         try { if (typeof GM_getValue === 'function') { const v = GM_getValue(k, d); if (v !== undefined && !(v && typeof v.then === 'function')) return v; } } catch (e) {}
@@ -278,16 +290,16 @@
             overlay.id = 'omni-overlay';
             overlay.style.cssText = 'position:fixed !important;inset:0 !important;z-index:2147483647 !important;background:rgba(0,0,0,.72) !important;display:flex !important;align-items:center !important;justify-content:center !important;font-family:Arial,sans-serif !important;';
             overlay.innerHTML =
-                '<div id="omni-card" style="width:560px !important;max-width:94vw !important;max-height:88vh !important;overflow:auto !important;background:#fff !important;border-radius:16px !important;box-shadow:0 20px 60px rgba(0,0,0,.4) !important;">' +
+                '<div id="omni-card" style="width:560px !important;max-width:94vw !important;max-height:88vh !important;overflow:auto !important;background:' + th().card + ' !important;border-radius:16px !important;box-shadow:0 20px 60px rgba(0,0,0,.4) !important;">' +
                 '<div style="padding:20px 24px !important;background:#0f1419 !important;color:#fff !important;font:700 18px Arial !important;">Omni — User Agreement</div>' +
-                '<div style="padding:24px !important;display:flex !important;flex-direction:column !important;gap:12px !important;font:15px/1.6 Arial !important;color:#2c3e50 !important;">' +
+                '<div style="padding:24px !important;display:flex !important;flex-direction:column !important;gap:12px !important;font:15px/1.6 Arial !important;color:' + th().ink + ' !important;">' +
                 '<div>1. This tool is for personal use only.</div>' +
                 '<div>2. Do not disturb other users or disrupt the game.</div>' +
                 '<div>3. Ban risk is yours alone.</div>' +
                 '<div>4. Provided as-is, no warranty.</div>' +
                 '<div>5. Never share derived works publicly.</div>' +
                 '<div>6. Comply with a deletion request, no exception.</div>' +
-                '<div style="display:flex !important;gap:10px !important;margin-top:8px !important;"><button id="omni-decline" style="flex:1 !important;padding:14px !important;border:1px solid #b2bec3 !important;background:#fff !important;border-radius:10px !important;font:bold 15px Arial !important;cursor:pointer !important;">Decline</button><button id="omni-accept" style="flex:2 !important;padding:14px !important;border:none !important;background:#27ae60 !important;color:#fff !important;border-radius:10px !important;font:bold 15px Arial !important;cursor:pointer !important;">Accept &amp; Continue</button></div>' +
+                '<div style="display:flex !important;gap:10px !important;margin-top:8px !important;"><button id="omni-decline" style="flex:1 !important;padding:14px !important;border:1px solid ' + th().line + ' !important;background:' + th().ghost + ' !important;color:' + th().ink + ' !important;border-radius:10px !important;font:bold 15px Arial !important;cursor:pointer !important;">Decline</button><button id="omni-accept" style="flex:2 !important;padding:14px !important;border:none !important;background:#27ae60 !important;color:#fff !important;border-radius:10px !important;font:bold 15px Arial !important;cursor:pointer !important;">Accept &amp; Continue</button></div>' +
                 '</div></div>';
             document.body.appendChild(overlay);
             overlay.querySelector('#omni-decline').addEventListener('click', () => overlay.remove());
@@ -308,11 +320,11 @@
             overlay.id = 'omni-overlay';
             overlay.style.cssText = 'position:fixed !important;inset:0 !important;z-index:2147483647 !important;background:rgba(0,0,0,.72) !important;display:flex !important;align-items:center !important;justify-content:center !important;font-family:Arial,sans-serif !important;';
             overlay.innerHTML =
-                '<div id="omni-card" style="width:440px !important;max-width:92vw !important;background:#fff !important;border-radius:16px !important;overflow:hidden !important;box-shadow:0 20px 60px rgba(0,0,0,.4) !important;">' +
+                '<div id="omni-card" style="width:440px !important;max-width:92vw !important;background:' + th().card + ' !important;border-radius:16px !important;overflow:hidden !important;box-shadow:0 20px 60px rgba(0,0,0,.4) !important;">' +
                 '<div style="padding:16px 20px !important;background:#0f1419 !important;color:#fff !important;font:700 15px Arial !important;">Omni</div>' +
                 '<div style="padding:20px !important;display:flex !important;flex-direction:column !important;gap:14px !important;">' +
-                '<div id="omni-plugin-list" style="display:flex !important;flex-direction:column !important;gap:8px !important;font:13px Arial !important;color:#2c3e50 !important;">Loading plugins…</div>' +
-                '<div style="display:flex !important;gap:8px !important;justify-content:flex-end !important;"><button id="omni-skip" style="padding:10px 16px !important;border:1px solid #b2bec3 !important;background:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;">Skip</button><button id="omni-install" style="padding:10px 16px !important;border:none !important;background:#0f1419 !important;color:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;">Install &amp; Run</button></div>' +
+                '<div id="omni-plugin-list" style="display:flex !important;flex-direction:column !important;gap:8px !important;font:13px Arial !important;color:' + th().ink + ' !important;">Loading plugins…</div>' +
+                '<div style="display:flex !important;gap:8px !important;justify-content:flex-end !important;"><button id="omni-skip" style="padding:10px 16px !important;border:1px solid ' + th().line + ' !important;background:' + th().ghost + ' !important;color:' + th().ink + ' !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;">Skip</button><button id="omni-install" style="padding:10px 16px !important;border:none !important;background:#0f1419 !important;color:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;">Install &amp; Run</button></div>' +
                 '</div></div>';
             document.body.appendChild(overlay);
             const list = overlay.querySelector('#omni-plugin-list');
@@ -400,7 +412,7 @@
         overlay.id = 'omni-settings';
         overlay.style.cssText = 'position:fixed !important;inset:0 !important;z-index:2147483647 !important;background:rgba(0,0,0,.72) !important;display:flex !important;align-items:center !important;justify-content:center !important;font-family:Arial,sans-serif !important;';
         const card = document.createElement('div');
-        card.style.cssText = 'width:400px !important;max-width:92vw !important;max-height:80vh !important;overflow:auto !important;background:#fff !important;border-radius:16px !important;color:#2c3e50 !important;';
+        card.style.cssText = 'width:400px !important;max-width:92vw !important;max-height:80vh !important;overflow:auto !important;background:' + th().card + ' !important;border-radius:16px !important;color:' + th().ink + ' !important;';
         const head = document.createElement('div');
         head.style.cssText = 'padding:14px 18px !important;background:#0f1419 !important;color:#fff !important;font:700 14px Arial !important;display:flex !important;justify-content:space-between !important;align-items:center !important;';
         head.innerHTML = '<span>Omni settings</span>';
@@ -430,7 +442,7 @@
             btns.style.cssText = 'display:flex !important;gap:6px !important;';
             const un = document.createElement('button');
             un.textContent = 'Unload';
-            un.style.cssText = 'padding:6px 10px !important;border:1px solid #b2bec3 !important;background:#fff !important;border-radius:6px !important;font:bold 12px Arial !important;cursor:pointer !important;';
+            un.style.cssText = 'padding:6px 10px !important;border:1px solid ' + th().line + ' !important;background:' + th().ghost + ' !important;color:' + th().ink + ' !important;border-radius:6px !important;font:bold 12px Arial !important;cursor:pointer !important;';
             un.addEventListener('click', () => { unloadPlugin(id); delete loadedMeta[id]; row.remove(); });
             const dis = document.createElement('button');
             dis.textContent = 'Disable';
@@ -454,7 +466,7 @@
         });
         const menuBtn = document.createElement('button');
         menuBtn.textContent = 'Plugin menu';
-        menuBtn.style.cssText = 'padding:10px !important;border:1px solid #b2bec3 !important;background:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;';
+        menuBtn.style.cssText = 'padding:10px !important;border:1px solid ' + th().line + ' !important;background:' + th().ghost + ' !important;color:' + th().ink + ' !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;';
         menuBtn.addEventListener('click', () => { overlay.remove(); showMenu(); });
         const resetBtn = document.createElement('button');
         resetBtn.textContent = 'Reset Omni';
@@ -463,7 +475,18 @@
             try { localStorage.removeItem(STORE_AGREED); localStorage.removeItem(STORE_PLUGINS); } catch (e) {}
             try { location.reload(); } catch (err) {}
         });
+        const themeBtn = document.createElement('button');
+        const cur = (function () { try { return gGet(STORE_THEME, 'light'); } catch (e) { return 'light'; } })();
+        themeBtn.textContent = 'Theme: ' + (cur === 'dark' ? 'Dark' : 'Light');
+        themeBtn.style.cssText = 'padding:10px !important;border:1px solid ' + th().line + ' !important;background:' + th().ghost + ' !important;color:' + th().ink + ' !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;';
+        themeBtn.addEventListener('click', () => {
+            const now = (function () { try { return gGet(STORE_THEME, 'light'); } catch (e) { return 'light'; } })();
+            gSet(STORE_THEME, now === 'dark' ? 'light' : 'dark');
+            overlay.remove();
+            toggleSettings();
+        });
         body.appendChild(menuBtn);
+        body.appendChild(themeBtn);
         body.appendChild(resetBtn);
         card.appendChild(head);
         card.appendChild(body);
