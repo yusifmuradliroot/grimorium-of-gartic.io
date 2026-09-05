@@ -1,5 +1,9 @@
 # LEARNINGS — AI memory (AI: append here, never delete)
 
+## Conventions (taste-level, don't churn these)
+- Branch names lowercase (`aetherial`, `chaotic`). Never rename for style alone.
+- When user bikesheds on details: give one honest short opinion, don't manufacture churn for zero gain.
+
 ## 2026-09-05 — infra-building session with user
 - User wants micro-steps: one decision per message, short answers, approval before each move.
   Long briefings get rejected ("daha kisa-kisa"). When user says "anlamadim", re-explain with a
