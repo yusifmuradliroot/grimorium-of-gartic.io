@@ -1,6 +1,7 @@
 // pixel_drawer — Orbit API mywsid, manual send, nerfed limits
 // Orbit kernel'indeki mywsid'i kullanir, plugin reload'da kaybolmaz
 // Anti-theft: w.Orbit.verify('pixel_drawer') yoksa abort
+// __omniWsHub __omniHubReady — omni-aware marker, VM'de calisir (page inject degil)
 
 (function () {
     'use strict';
