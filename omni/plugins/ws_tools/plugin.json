@@ -4,5 +4,5 @@
   "description": "WS traffic logger + independent E5 mywsid catcher (writes to kernel)",
   "entry": "ws_tools.js",
   "mustContain": "__omniWsTools",
-  "version": "1.2"
+  "version": "1.3"
 }

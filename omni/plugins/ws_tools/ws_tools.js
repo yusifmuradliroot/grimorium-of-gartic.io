@@ -67,5 +67,5 @@
     setInterval(() => paint(), 2000);
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => ensureUI());
     else ensureUI();
-    console.log('[ws_tools] logger + catcher active');
+    console.log('[ws_tools] v1.3 logger + catcher active');
 })();
