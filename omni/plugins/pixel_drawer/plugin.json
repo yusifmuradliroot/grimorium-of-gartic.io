@@ -5,5 +5,5 @@
   "entry": "pixel_drawer.js",
   "mustContain": "__pixelDrawer",
   "dependencies": ["ws_core"],
-  "version": "2.2"
+  "version": "2.3"
 }
