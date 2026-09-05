@@ -4,5 +4,6 @@
   "description": "Photo to 8x8, 2-2-2 bit color, 1 packet per 250ms",
   "entry": "pixel_drawer.js",
   "mustContain": "__pixelDrawer",
-  "version": "2.1"
+  "dependencies": ["ws_core"],
+  "version": "2.2"
 }

@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '1.8';
+    const VERSION = '1.9';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -351,6 +351,7 @@
                                 row.appendChild(tx);
                                 row.dataset.file = (info && info.entry) ? n + '/' + info.entry : n + '.js';
                                 row.dataset.must = (info && info.mustContain) || n;
+                                row.dataset.deps = JSON.stringify((info && info.dependencies) || []);
                                 list.appendChild(row);
                                 if (--pending === 0) wire(list, overlay);
                             },
@@ -366,11 +367,13 @@
             const sel = [];
             list.querySelectorAll('input:checked').forEach(cb => {
                 const row = cb.closest('label');
-                sel.push({ id: cb.value, file: row.dataset.file, must: row.dataset.must });
+                let deps = [];
+                try { deps = JSON.parse(row.dataset.deps || '[]'); } catch (e) {}
+                sel.push({ id: cb.value, file: row.dataset.file, must: row.dataset.must, deps: deps });
             });
             gSet(STORE_PLUGINS, sel);
             overlay.remove();
-            sel.forEach(p => loadPlugin(p.id, p.file, p.must, ok => console.log('[omni] plugin ' + p.id + ': ' + (ok ? 'loaded' : 'FAILED'))));
+            loadOrdered(sel);
         });
     }
     function boot() {
@@ -383,14 +386,85 @@
     function loadSelected() {
         const raw = gGet(STORE_PLUGINS, []);
         const go = sel => {
-            const arr = Array.isArray(sel) ? sel : [];
-            arr.forEach(p => {
-                if (typeof p === 'string') return;
-                loadPlugin(p.id, p.file, p.must, ok => console.log('[omni] plugin ' + p.id + ': ' + (ok ? 'loaded' : 'FAILED')));
+            const arr = Array.isArray(sel) ? sel.filter(p => p && typeof p !== 'string') : [];
+            const needMeta = arr.filter(p => !Array.isArray(p.deps));
+            if (!needMeta.length) { loadOrdered(arr); return; }
+            let pending = needMeta.length;
+            needMeta.forEach(p => {
+                fetchText(PLUGIN_BASE + p.id + '/plugin.json',
+                    meta => {
+                        try {
+                            const info = JSON.parse(meta);
+                            p.deps = info.dependencies || [];
+                        } catch (e) { p.deps = []; }
+                        if (--pending === 0) loadOrdered(arr);
+                    },
+                    () => { p.deps = []; if (--pending === 0) loadOrdered(arr); });
             });
         };
         if (raw && typeof raw.then === 'function') raw.then(go);
         else go(raw);
+    }
+    // Dependencies: topo-sort, deps first; a failed dep blocks its dependents.
+    // Missing deps are auto-pulled (fetched + installed silently).
+    function loadOrdered(sel) {
+        const byId = {};
+        sel.forEach(p => { byId[p.id] = p; });
+        const missing = {};
+        sel.forEach(p => (p.deps || []).forEach(d => { if (!byId[d]) missing[d] = true; }));
+        const missIds = Object.keys(missing);
+        if (missIds.length) {
+            // Auto-pulled deps stay implicit (not stored); re-fetched each boot.
+            let pending = missIds.length;
+            missIds.forEach(id => {
+                fetchText(PLUGIN_BASE + id + '/plugin.json',
+                    meta => {
+                        try {
+                            const info = JSON.parse(meta);
+                            byId[id] = { id: id, file: id + '/' + (info.entry || (id + '.js')), must: info.mustContain || id, deps: info.dependencies || [] };
+                        } catch (e) {}
+                        if (--pending === 0) loadOrdered(Object.keys(byId).map(k => byId[k]));
+                    },
+                    () => { console.error('[omni] dependency unreachable: ' + id); if (--pending === 0) loadOrdered(Object.keys(byId).map(k => byId[k])); });
+            });
+            return;
+        }
+        const order = [];
+        const state = {};
+        let cycle = false;
+        function visit(id, stack) {
+            if (state[id] === 2) return;
+            if (state[id] === 1) { cycle = true; console.error('[omni] dependency cycle: ' + stack.concat(id).join(' -> ')); return; }
+            state[id] = 1;
+            const p = byId[id];
+            if (!p) return;
+            (p.deps || []).forEach(d => { if (byId[d]) visit(d, stack.concat(id)); });
+            state[id] = 2;
+            order.push(id);
+        }
+        sel.forEach(p => visit(p.id, []));
+        if (cycle) console.error('[omni] cycle detected, loading in listed order where possible');
+        const failed = {};
+        let i = 0;
+        function next() {
+            if (i >= order.length) return;
+            const id = order[i++];
+            const p = byId[id];
+            if (!p) { next(); return; }
+            const blocked = (p.deps || []).filter(d => failed[d]);
+            if (blocked.length) {
+                failed[id] = true;
+                console.error('[omni] plugin ' + id + ' SKIPPED, failed deps: ' + blocked.join(','));
+                next();
+                return;
+            }
+            loadPlugin(p.id, p.file, p.must, ok => {
+                console.log('[omni] plugin ' + p.id + ': ' + (ok ? 'loaded' : 'FAILED'));
+                if (!ok) failed[id] = true;
+                next();
+            });
+        }
+        next();
     }
 
     // ============ 6) SETTINGS: floating button + control panel ============
