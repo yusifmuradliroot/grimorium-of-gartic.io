@@ -185,12 +185,15 @@
         if (timer || !regions || sid() == null) { setStatus(sid() == null ? 'mywsid: waiting…' : (!regions ? 'pick a photo first' : 'busy')); return; }
         queue.length = 0;
         queue.push([27, '1']);
-        queue.push([6, '1']);
+        queue.push([6, '2']);
         let lastHx = null;
         regions.forEach(r => {
             if (queue.length > MAX_PACKETS) return;
             if (r.hx !== lastHx) { queue.push([5, 'x' + r.hx]); lastHx = r.hx; }
-            orderStrokes(r.contour).forEach(s => pushStroke(s));
+            orderStrokes(r.contour).forEach(s => {
+                if (s.length > 2) s.push(s[0].slice());
+                pushStroke(s);
+            });
             if (r.seed && queue.length <= MAX_PACKETS) {
                 if (r.hx !== lastHx) { queue.push([5, 'x' + r.hx]); lastHx = r.hx; }
                 queue.push([7, Math.round((r.seed[0] + 0.5) * SX), Math.round((r.seed[1] + 0.5) * SY)]);
