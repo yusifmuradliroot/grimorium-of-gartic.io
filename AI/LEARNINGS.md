@@ -27,5 +27,5 @@
 - Lesson: user prefers decentralized metadata; keep central files to dumb name lists.
 
 ## 2026-09-05 — mobile debugging
-- User tests on mobile Firefox (Iceraven), no console access. All diagnosis needs visual feedback
+- User tests on mobile Firefox-based browser, no console access. All diagnosis needs visual feedback
   (debug badges, on-screen status). Never rely on "check the console".
