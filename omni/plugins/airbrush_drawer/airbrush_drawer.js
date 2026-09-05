@@ -72,10 +72,23 @@
             }
             return bi;
         });
-        buildRegions(grid, pal);
-        drawPreview(grid, pal);
+        const closed = closeHoles(grid);
+        buildRegions(closed, pal);
+        drawPreview(closed, pal);
         const pk = estimate();
         setStatus(GW + 'x' + GH + ', ' + pal.length + ' colors, ~' + pk + ' packets');
+    }
+    function closeHoles(grid) {
+        // Fill single-cell holes: a cell whose 4 neighbors all share one other color
+        // takes that color. Kills speckle dots and seals 1px boundary gaps.
+        for (let y = 1; y < GH - 1; y++) for (let x = 1; x < GW - 1; x++) {
+            const i = y * GW + x;
+            const n = [grid[i - 1], grid[i + 1], grid[i - GW], grid[i + GW]];
+            if (n[0] === n[1] && n[1] === n[2] && n[2] === n[3] && n[0] !== grid[i]) {
+                grid[i] = n[0];
+            }
+        }
+        return grid;
     }
     function buildRegions(grid, pal) {
         const seen = new Uint8Array(GW * GH);
@@ -225,7 +238,7 @@
             });
         });
         let i = 0;
-        setStatus('drawing 0/' + queue.length);
+        setStatus('drawing 0/' + queue.length + (queue.length >= MAX_PACKETS ? ' — CUT at cap, simplify photo!' : ''));
         timer = setInterval(() => {
             if (i >= queue.length) { stop(); setStatus('done: ' + queue.length + ' packets'); return; }
             if (!send(queue[i])) { stop(); setStatus('send failed'); return; }
