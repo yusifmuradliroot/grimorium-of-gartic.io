@@ -33,6 +33,8 @@
     - "konsol erişimim yok" → user is on mobile: diagnose via visual feedback only (badges, on-screen
       status). Never say "check the console".
     - "konsol erişimim var" → user is on desktop: console logs may be requested and used.
-14. **Two-repo sync.** Layout, schema, rule and convention changes apply to BOTH repos (abyss raw,
-    grimorium protected — adapt, don't blind-copy). After touching one side, mirror to the other
-    in the same session and run `tools/check.py` on both. The repos must never drift structurally.
+14. **Two-repo sync — only when needed.** Mirror to the other repo ONLY if the change affects the
+    SHARED contract: layout, plugin schema, checker logic, or a rule/convention meant for both sides
+    (adapt, don't blind-copy). NEVER copy repo-specific files across: this repo's LICENSE, TERMS,
+    public docs stay here; abyss raw sources, dist output and private notes stay there.
+    After a shared change, mirror in the same session and run `tools/check.py` on both.
