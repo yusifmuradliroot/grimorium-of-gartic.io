@@ -190,29 +190,39 @@
         if (timer || !regions || sid() == null) { setStatus(sid() == null ? 'mywsid: waiting…' : (!regions ? 'pick a photo first' : 'busy')); return; }
         queue.length = 0;
         queue.push([27, '1']);
-        queue.push([6, '2']);
-        // Phase 1: ALL contours, grouped by color. Phase 2: ALL floods.
+        // Layers, biggest first: background with a wide brush, details sharp on top.
         const byColor = new Map();
         regions.forEach(r => {
-            if (!byColor.has(r.hx)) byColor.set(r.hx, []);
-            byColor.get(r.hx).push(r);
+            if (!byColor.has(r.hx)) byColor.set(r.hx, { cells: 0, list: [] });
+            const e = byColor.get(r.hx);
+            e.cells += r.contour.length + (r.seed ? 1 : 0);
+            e.list.push(r);
         });
-        let lastHx = null;
-        byColor.forEach((list, hx) => {
+        const layers = [...byColor.entries()].sort((a, b) => b[1].cells - a[1].cells);
+        function layerSize(cells) {
+            return Math.max(2, Math.min(12, Math.round(Math.sqrt(cells) / 6)));
+        }
+        // Phase 1: ALL contours per layer. Phase 2: ALL floods per layer.
+        layers.forEach(entry => {
+            const hx = entry[0], e = entry[1];
             if (queue.length > MAX_PACKETS) return;
+            queue.push([6, String(layerSize(e.cells))]);
             queue.push([5, 'x' + hx]);
-            lastHx = hx;
-            list.forEach(r => {
+            e.list.forEach(r => {
                 orderStrokes(r.contour).forEach(s => {
                     if (s.length > 2) s.push(s[0].slice());
                     pushStroke(s);
                 });
             });
         });
-        regions.forEach(r => {
-            if (!r.seed || queue.length > MAX_PACKETS) return;
-            if (r.hx !== lastHx) { queue.push([5, 'x' + r.hx]); lastHx = r.hx; }
-            queue.push([7, Math.round((r.seed[0] + 0.5) * SX), Math.round((r.seed[1] + 0.5) * SY)]);
+        let lastHx = null;
+        layers.forEach(entry => {
+            const hx = entry[0], e = entry[1];
+            e.list.forEach(r => {
+                if (!r.seed || queue.length > MAX_PACKETS) return;
+                if (hx !== lastHx) { queue.push([5, 'x' + hx]); lastHx = hx; }
+                queue.push([7, Math.round((r.seed[0] + 0.5) * SX), Math.round((r.seed[1] + 0.5) * SY)]);
+            });
         });
         let i = 0;
         setStatus('drawing 0/' + queue.length);
