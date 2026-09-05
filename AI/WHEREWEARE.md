@@ -14,6 +14,9 @@ Gartic.io scripting platform (SDK vision). Description: "Scripting platform for 
 - Build mode: MANUAL (automation later).
 - AI infra: this file system (AGENTS.md + AI/).
 
+## User context
+- Device: mobile (Iceraven / Firefox-based). Console: NONE → visual-feedback diagnosis only.
+
 ## In progress
 - AI infrastructure files (this batch).
 
