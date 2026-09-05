@@ -107,6 +107,26 @@
         setStatus(send([4]) ? 'canvas cleared' : 'mywsid: waiting…');
     }
     function setStatus(m) { if (statusEl) statusEl.textContent = m; }
+    // Theme follower (optional contract): repaint on omni-theme-change.
+    function applyTheme(name) {
+        const dark = name !== 'light';
+        if (panel) {
+            panel.style.background = dark ? '#1e272e' : '#ffffff';
+            panel.style.borderColor = dark ? '#fff' : '#222';
+            panel.style.color = dark ? '#fff' : '#222';
+        }
+        if (toggleBtn) {
+            toggleBtn.style.background = dark ? '#222' : '#eee';
+            toggleBtn.style.color = dark ? '#fff' : '#222';
+            toggleBtn.style.borderColor = dark ? '#fff' : '#222';
+        }
+    }
+    function watchTheme() {
+        let cur = 'light';
+        try { cur = Orbit.api.getTheme() || 'light'; } catch (e) {}
+        applyTheme(cur);
+        try { Orbit.events.on('omni-theme-change', ev => applyTheme(ev && ev.detail)); } catch (e) {}
+    }
 
     function buildUI() {
         if (panel || !document.body) return;
@@ -181,7 +201,13 @@
         panel = null; toggleBtn = null;
     };
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildUI);
-    else setTimeout(buildUI, 300);
-    console.log('[pixel_drawer] photo 8x8 v2.1 ready');
+    function bootUI() {
+        buildUI();
+        watchTheme();
+        // Late paint in case theme arrived first.
+        setTimeout(() => { try { applyTheme(Orbit.api.getTheme() || 'light'); } catch (e) {} }, 500);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootUI);
+    else setTimeout(bootUI, 300);
+    console.log('[pixel_drawer] photo 8x8 v2.3 ready');
 })();

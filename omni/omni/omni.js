@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '2.0';
+    const VERSION = '2.1';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -21,6 +21,21 @@
             if (typeof t === 'string' && THEMES[t]) return THEMES[t];
         } catch (e) {}
         return THEMES.light;
+    }
+    function currentTheme() {
+        try {
+            const t = gGet(STORE_THEME, 'light');
+            if (typeof t === 'string' && THEMES[t]) return t;
+        } catch (e) {}
+        return 'light';
+    }
+    // Global theme bus: plugins that support theming read getTheme() once,
+    // then follow 'omni-theme-change' events. w.__omniTheme mirrors the value.
+    function setTheme(name) {
+        if (!THEMES[name]) return;
+        gSet(STORE_THEME, name);
+        w.__omniTheme = name;
+        try { w.dispatchEvent(new CustomEvent('omni-theme-change', { detail: name })); } catch (e) {}
     }
 
     function gGet(k, d) {
@@ -198,7 +213,8 @@
             getMyWsId: function () { return w.getMyWsId(); },
             setMyWsId: function (id) { return w.setMyWsId(id); },
             getMyId: function () { return w.getMyId(); },
-            getSession: function () { return w.getSession(); }
+            getSession: function () { return w.getSession(); },
+            getTheme: function () { return currentTheme(); }
         },
         store: {
             get: function (k, d) { try { return gGet(k, d); } catch (e) { return d; } },
@@ -426,6 +442,7 @@
         });
     }
     function boot() {
+        try { w.__omniTheme = currentTheme(); } catch (e) {}
         ensureSettingsButton();
         const agreed = gGet(STORE_AGREED, false);
         if (agreed && typeof agreed.then === 'function') { agreed.then(a => { a ? loadSelected() : showAgreement(); }); return; }
@@ -619,8 +636,7 @@
         themeBtn.textContent = 'Theme: ' + (cur === 'dark' ? 'Dark' : 'Light');
         themeBtn.style.cssText = 'padding:10px !important;border:1px solid ' + th().line + ' !important;background:' + th().ghost + ' !important;color:' + th().ink + ' !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;';
         themeBtn.addEventListener('click', () => {
-            const now = (function () { try { return gGet(STORE_THEME, 'light'); } catch (e) { return 'light'; } })();
-            gSet(STORE_THEME, now === 'dark' ? 'light' : 'dark');
+            setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
             overlay.remove();
             toggleSettings();
         });
