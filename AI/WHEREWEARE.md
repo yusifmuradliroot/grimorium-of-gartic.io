@@ -12,13 +12,15 @@ Gartic.io scripting platform (SDK vision). Description: "Scripting platform for 
 - Plugin system: `index.json` (folder names) + per-plugin folder (`plugin.json` + entry js). Reference `example/` template exists. Real pixel_drawer NOT public yet.
 - Bug report template in `.github/ISSUE_TEMPLATE/`.
 - Build mode: MANUAL (automation later).
-- AI infra: this file system (AGENTS.md + AI/).
+- AI infra: AGENTS.md + AI/{RULES,WHEREWEARE,CONTEXT,LEARNINGS} with handoff, privacy,
+  no-rambling, prune and context-cue rules. Target env rule: Firefox-based + Violentmonkey.
+- Code cleanliness rule: no AI notes in shipped code (example/ scripts excepted, human-readable).
 
 ## User context
 - Device: mobile, Firefox-based. Console: NONE → visual-feedback diagnosis only.
 
 ## In progress
-- AI infrastructure files (this batch).
+- Abyss organization (AI infra mirror + source layout + cleanup).
 
 ## Next
 - Fresh core code in `abyss` (raw voyager + orbit, single "Omni" branding in GUI).
