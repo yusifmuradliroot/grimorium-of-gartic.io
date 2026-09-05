@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      1.4
+// @version      1.5
 // @description  Omni loader — self-checks version, then fetches the framework and runs it.
 // @match        https://gartic.io/*
 // @grant        GM_xmlhttpRequest
@@ -52,7 +52,7 @@
         return m ? m[1] : null;
     }
 
-    function showBlocker(remoteVer) {
+    function showBlocker(mode, detail) {
         function render() {
             if (!document.body) { setTimeout(render, 200); return; }
             const overlay = document.createElement('div');
@@ -62,17 +62,28 @@
             card.style.cssText = 'width:420px !important;max-width:92vw !important;background:#1e272e !important;border:2px solid #c0392b !important;border-radius:12px !important;box-shadow:0 8px 32px rgba(0,0,0,.5) !important;color:#ecf0f1 !important;overflow:hidden !important;';
             const head = document.createElement('div');
             head.style.cssText = 'padding:12px 16px !important;background:#c0392b !important;font:700 14px Arial !important;';
-            head.textContent = 'Omni loader outdated';
+            head.textContent = mode === 'outdated' ? 'Omni loader outdated' : 'Omni loader error';
             const body = document.createElement('div');
             body.style.cssText = 'padding:20px !important;display:flex !important;flex-direction:column !important;gap:14px !important;font:13px/1.5 Arial !important;';
             const msg = document.createElement('div');
-            msg.textContent = 'omni/voyager is outdated (yours: v' + ownVersion() + ', latest: v' + remoteVer + '). Please update manually.';
-            const btn = document.createElement('a');
-            btn.href = INSTALL_URL;
-            btn.textContent = 'Update voyager.user.js';
-            btn.style.cssText = 'display:block !important;text-align:center !important;padding:12px !important;background:#27ae60 !important;color:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;text-decoration:none !important;';
-            body.appendChild(msg);
-            body.appendChild(btn);
+            if (mode === 'outdated') {
+                msg.textContent = 'omni/voyager is outdated (yours: v' + ownVersion() + ', latest: v' + detail + '). Please update manually.';
+                const btn = document.createElement('a');
+                btn.href = INSTALL_URL;
+                btn.textContent = 'Update voyager.user.js';
+                btn.style.cssText = 'display:block !important;text-align:center !important;padding:12px !important;background:#27ae60 !important;color:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;text-decoration:none !important;';
+                body.appendChild(msg);
+                body.appendChild(btn);
+            } else {
+                msg.textContent = 'omni/voyager could not verify its version (' + detail + '). Check your connection and reload.';
+                const btn = document.createElement('a');
+                btn.href = '#';
+                btn.textContent = 'Reload page';
+                btn.style.cssText = 'display:block !important;text-align:center !important;padding:12px !important;background:#27ae60 !important;color:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;text-decoration:none !important;';
+                btn.addEventListener('click', e => { e.preventDefault(); try { location.reload(); } catch (err) {} });
+                body.appendChild(msg);
+                body.appendChild(btn);
+            }
             card.appendChild(head);
             card.appendChild(body);
             overlay.appendChild(card);
@@ -111,7 +122,12 @@
 
     const mine = ownVersion();
     console.log('[omni] loader v' + mine + ' — self-check first');
-    if (mine === null) { loadFramework(); return; }
+    // Fail CLOSED: unverifiable version never loads the framework.
+    if (mine === null) {
+        console.error('[omni] cannot read own version (GM_info missing)');
+        showBlocker('error', 'own version unreadable');
+        return;
+    }
     // Single source (raw): ~5min cache, never throttled, guaranteed fresh.
     function cmp(a, b) {
         const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
@@ -124,12 +140,20 @@
     fetchText(SELF_URL,
         code => {
             const remoteVer = parseVersion(code);
-            if (remoteVer && cmp(remoteVer, mine) > 0) {
+            if (!remoteVer) {
+                console.error('[omni] remote version unparseable');
+                showBlocker('error', 'remote version unparseable');
+                return;
+            }
+            if (cmp(remoteVer, mine) > 0) {
                 console.error('[omni] outdated: local v' + mine + ' vs remote v' + remoteVer);
-                showBlocker(remoteVer);
+                showBlocker('outdated', remoteVer);
                 return;
             }
             loadFramework();
         },
-        () => { loadFramework(); });
+        err => {
+            console.error('[omni] self-check fetch failed', err);
+            showBlocker('error', 'version check unreachable');
+        });
 })();
