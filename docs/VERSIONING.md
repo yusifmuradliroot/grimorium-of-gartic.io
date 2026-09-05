@@ -5,4 +5,5 @@
 - Core parts are independent, each carries its own version:
   - `voyager` → own version
   - `orbit` → own version
-- Omni itself has its own internal version on top of the parts.
+- Omni's internal version is derived from the parts, not counted separately:
+  `voyager+orbit` side by side (e.g. voyager 1.0 + orbit 1.1 → Omni `1.0+1.1`).
