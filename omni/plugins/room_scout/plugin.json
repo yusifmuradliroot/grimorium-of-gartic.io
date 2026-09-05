@@ -1,9 +1,9 @@
 {
   "id": "room_scout",
   "name": "Room Scout",
-  "description": "Live room list from /req/list, click a room to open its viewer",
+  "description": "Live rooms + background player fetch (token, socket, E5)",
   "entry": "room_scout.js",
   "mustContain": "__roomScout",
   "dependencies": ["ws_core"],
-  "version": "1.4"
+  "version": "2.0"
 }
