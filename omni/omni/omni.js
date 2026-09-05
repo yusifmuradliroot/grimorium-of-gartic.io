@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '1.3';
+    const VERSION = '1.4';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -44,6 +44,7 @@
     const NativeWS = w.WebSocket;
     let activeWS = null;
     const listeners = [];
+    const sendListeners = [];
     w.__omniWsHub = true;
 
     function patchInstance(inst) {
@@ -53,6 +54,7 @@
         const realSend = inst.send.bind(inst);
         inst.send = function (data) {
             console.log('%c[WS →]', 'color:#e74c3c;font-weight:bold', data); // TEMP DEBUG
+            for (let i = 0; i < sendListeners.length; i++) try { sendListeners[i](data); } catch (err) {}
             return realSend(data);
         };
         inst.addEventListener('open', () => { activeWS = inst; console.log('%c[WS OPEN]', 'color:#27ae60;font-weight:bold'); }); // TEMP DEBUG
@@ -108,6 +110,8 @@
     };
     w.onWS = function (cb) { if (typeof cb !== 'function') return null; listeners.push(cb); return cb; };
     w.offWS = function (cb) { const i = listeners.indexOf(cb); if (i > -1) listeners.splice(i, 1); };
+    w.onWSSend = function (cb) { if (typeof cb !== 'function') return null; sendListeners.push(cb); return cb; };
+    w.offWSSend = function (cb) { const i = sendListeners.indexOf(cb); if (i > -1) sendListeners.splice(i, 1); };
     w.wsHubGetSocket = function () { return activeWS; };
 
     // ============ 2) API: session + identity (kernel owns mywsid) ============
@@ -150,6 +154,11 @@
         }
     }
     w.onWS(handleMessage);
+    w.setMyWsId = function (id) {
+        if (id == null || !Number.isFinite(Number(id))) return false;
+        setMyWsId(Number(id));
+        return true;
+    };
     w.getMyWsId = function () { return mywsid; };
     w.getMyId = function () { return myid; };
     w.getSession = function () { return sessionOpen || mywsid != null; };
@@ -166,10 +175,13 @@
             sendWS: function (d) { return w.sendWS(d); },
             onWS: function (cb) { return w.onWS(cb); },
             offWS: function (cb) { return w.offWS(cb); },
+            onWSSend: function (cb) { return w.onWSSend(cb); },
+            offWSSend: function (cb) { return w.offWSSend(cb); },
             getSocket: function () { return w.wsHubGetSocket(); }
         },
         api: {
             getMyWsId: function () { return w.getMyWsId(); },
+            setMyWsId: function (id) { return w.setMyWsId(id); },
             getMyId: function () { return w.getMyId(); },
             getSession: function () { return w.getSession(); }
         },
