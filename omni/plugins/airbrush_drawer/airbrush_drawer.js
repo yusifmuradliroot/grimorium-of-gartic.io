@@ -138,25 +138,29 @@
         }
     }
     function orderStrokes(pts) {
-        // Greedy 8-neighbor walk → ordered strokes (arrays of canvas [x,y]).
-        const left = pts.map(p => [Math.round((p[0] + 0.5) * SX), Math.round((p[1] + 0.5) * SY)]);
+        // Direction-coherent walk on GRID coords → long smooth strokes, then map to canvas.
+        const left = pts.map(p => [p[0], p[1]]);
         const strokes = [];
         while (left.length) {
             const s = [left.shift()];
-            let moved = true;
-            while (moved) {
-                moved = false;
+            let dx0 = 0, dy0 = 0;
+            for (;;) {
                 const last = s[s.length - 1];
-                let bi = -1, bd = Infinity;
+                let bi = -1, bs = -Infinity;
                 for (let i = 0; i < left.length; i++) {
-                    const dx = Math.abs(left[i][0] - last[0]), dy = Math.abs(left[i][1] - last[1]);
-                    if (dx > SX + 1 || dy > SY + 1) continue;
-                    const dd = dx + dy;
-                    if (dd < bd) { bd = dd; bi = i; }
+                    const dx = left[i][0] - last[0], dy = left[i][1] - last[1];
+                    if (Math.abs(dx) > 1 || Math.abs(dy) > 1 || (dx === 0 && dy === 0)) continue;
+                    let score = 10 - (Math.abs(dx) + Math.abs(dy));
+                    if (s.length > 1) score += dx * dx0 + dy * dy0;
+                    if (score > bs) { bs = score; bi = i; }
                 }
-                if (bi > -1) { s.push(left[bi]); left.splice(bi, 1); moved = true; }
+                if (bi < 0) break;
+                const nx = left[bi][0], ny = left[bi][1];
+                dx0 = nx - last[0]; dy0 = ny - last[1];
+                s.push(left[bi]);
+                left.splice(bi, 1);
             }
-            strokes.push(s);
+            strokes.push(s.map(p => [Math.round((p[0] + 0.5) * SX), Math.round((p[1] + 0.5) * SY)]));
         }
         return strokes;
     }
@@ -177,7 +181,8 @@
                 i++;
                 n--;
             }
-            if (pkt.length > 1) queue.push(pkt);
+            if (pkt.length === 3) queue.push([2, pkt[1], pkt[2], pkt[1] + 1, pkt[2] + 1]);
+            else if (pkt.length > 1) queue.push(pkt);
             else break;
         }
     }
@@ -186,18 +191,28 @@
         queue.length = 0;
         queue.push([27, '1']);
         queue.push([6, '2']);
-        let lastHx = null;
+        // Phase 1: ALL contours, grouped by color. Phase 2: ALL floods.
+        const byColor = new Map();
         regions.forEach(r => {
+            if (!byColor.has(r.hx)) byColor.set(r.hx, []);
+            byColor.get(r.hx).push(r);
+        });
+        let lastHx = null;
+        byColor.forEach((list, hx) => {
             if (queue.length > MAX_PACKETS) return;
-            if (r.hx !== lastHx) { queue.push([5, 'x' + r.hx]); lastHx = r.hx; }
-            orderStrokes(r.contour).forEach(s => {
-                if (s.length > 2) s.push(s[0].slice());
-                pushStroke(s);
+            queue.push([5, 'x' + hx]);
+            lastHx = hx;
+            list.forEach(r => {
+                orderStrokes(r.contour).forEach(s => {
+                    if (s.length > 2) s.push(s[0].slice());
+                    pushStroke(s);
+                });
             });
-            if (r.seed && queue.length <= MAX_PACKETS) {
-                if (r.hx !== lastHx) { queue.push([5, 'x' + r.hx]); lastHx = r.hx; }
-                queue.push([7, Math.round((r.seed[0] + 0.5) * SX), Math.round((r.seed[1] + 0.5) * SY)]);
-            }
+        });
+        regions.forEach(r => {
+            if (!r.seed || queue.length > MAX_PACKETS) return;
+            if (r.hx !== lastHx) { queue.push([5, 'x' + r.hx]); lastHx = r.hx; }
+            queue.push([7, Math.round((r.seed[0] + 0.5) * SX), Math.round((r.seed[1] + 0.5) * SY)]);
         });
         let i = 0;
         setStatus('drawing 0/' + queue.length);
