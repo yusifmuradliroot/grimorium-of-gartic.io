@@ -142,8 +142,8 @@
     }
     function fetchPlayers(room, cb) {
         // room: {id, code}. Viewer join on a throwaway socket, read E5, close.
-        solveToken(tok => {
-            if (!tok) { cb(null, 'captcha failed'); return; }
+        solveToken((tok, stage) => {
+            if (!tok) { cb(null, stage || 'captcha failed'); return; }
             const cs = cleanSocket();
             if (!cs) { cb(null, 'socket blocked'); return; }
             let sock = null, done = false;
