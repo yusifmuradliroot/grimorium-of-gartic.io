@@ -13,8 +13,12 @@
     if (!token || token.indexOf('room_scout') === -1) return;
     if (w.__roomScout) return;
 
+    const RESERVED = { rooms: 1, create: 1, join: 1, viewer: 1, play: 1, theme: 1, apps: 1, list: 1, options: 1, privacy: 1, discord: 1, download: 1, gartic: 1, itunes: 1, instagram: 1, logout: 1, details: 1, service: 1, req: 1, id: 1, images: 1, app: 1 };
     const path = (location.pathname || '').toLowerCase();
-    if (path.indexOf('whowhere') < 0 && path.indexOf('rooms') < 0) return;
+    const browseMode = path.indexOf('whowhere') >= 0 || path.indexOf('rooms') >= 0;
+    const segs = path.split('/').filter(s => s);
+    const roomCode = (!browseMode && segs.length >= 1 && /^[a-z0-9]{3,8}$/.test(segs[0]) && !RESERVED[segs[0]]) ? segs[0] : null;
+    if (!browseMode && !roomCode) return;
     w.__roomScout = true;
 
     const LIST_URL = 'https://gartic.io/req/list';
@@ -203,14 +207,65 @@
         if (timer) { clearInterval(timer); timer = null; }
     }
 
+    // ============ ROSTER mode: on room/viewer pages, live player list ============
+    let rosterEl = null;
+    function bus() { return w.WsCore || null; }
+    function paintRoster() {
+        if (!rosterEl) return;
+        let players = [];
+        try {
+            const b = bus();
+            players = (b && b.getPlayers()) || [];
+        } catch (e) {}
+        rosterEl.innerHTML = '';
+        const title = document.createElement('div');
+        title.style.cssText = 'color:#fff !important;font:700 13px Arial !important;margin-bottom:6px !important;';
+        title.textContent = 'Players (' + players.length + ')';
+        rosterEl.appendChild(title);
+        players.forEach(p => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex !important;justify-content:space-between !important;color:#ecf0f1 !important;font:12px Arial !important;padding:3px 0 !important;border-bottom:1px solid #1e272e !important;';
+            const nm = document.createElement('span');
+            nm.textContent = p.nick || ('#' + p.id);
+            const sc = document.createElement('span');
+            sc.style.cssText = 'color:#5dade2 !important;';
+            sc.textContent = String(p.pontos != null ? p.pontos : '');
+            row.appendChild(nm);
+            row.appendChild(sc);
+            rosterEl.appendChild(row);
+        });
+    }
+    function buildRoster() {
+        if (rosterEl || !document.body) return;
+        rosterEl = document.createElement('div');
+        rosterEl.id = 'room-scout-roster';
+        rosterEl.style.cssText = 'position:fixed !important;top:60px !important;right:10px !important;z-index:2147483646 !important;width:190px !important;max-height:60vh !important;overflow:auto !important;background:rgba(15,20,25,.92) !important;border:1px solid #34495e !important;border-radius:10px !important;padding:10px 12px !important;';
+        document.body.appendChild(rosterEl);
+        paintRoster();
+        try {
+            const b = bus();
+            if (b) b.onRoster(() => paintRoster());
+        } catch (e) {}
+        setInterval(() => paintRoster(), 5000);
+    }
+
+    function stop() {
+        if (timer) { clearInterval(timer); timer = null; }
+    }
     w.OmniStop_room_scout = function () {
         stop();
         try { if (overlay) overlay.remove(); } catch (e) {}
+        try { if (rosterEl) rosterEl.remove(); } catch (e) {}
         try { delete w.__roomScout; } catch (e) {}
         overlay = null;
+        rosterEl = null;
     };
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildUI);
-    else setTimeout(buildUI, 500);
+    function boot() {
+        if (roomCode && !browseMode) buildRoster();
+        else buildUI();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+    else setTimeout(boot, 500);
     console.log('[room_scout] live list ready');
 })();

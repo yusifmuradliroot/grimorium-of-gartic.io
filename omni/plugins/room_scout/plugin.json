@@ -4,5 +4,6 @@
   "description": "Live room list from /req/list, click a room to open its viewer",
   "entry": "room_scout.js",
   "mustContain": "__roomScout",
-  "version": "1.3"
+  "dependencies": ["ws_core"],
+  "version": "1.4"
 }
