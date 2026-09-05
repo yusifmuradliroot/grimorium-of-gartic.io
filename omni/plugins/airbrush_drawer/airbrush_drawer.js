@@ -137,24 +137,62 @@
             ctx.fillRect(x, y, 1, 1);
         }
     }
+    function orderStrokes(pts) {
+        // Greedy 8-neighbor walk → ordered strokes (arrays of canvas [x,y]).
+        const left = pts.map(p => [Math.round((p[0] + 0.5) * SX), Math.round((p[1] + 0.5) * SY)]);
+        const strokes = [];
+        while (left.length) {
+            const s = [left.shift()];
+            let moved = true;
+            while (moved) {
+                moved = false;
+                const last = s[s.length - 1];
+                let bi = -1, bd = Infinity;
+                for (let i = 0; i < left.length; i++) {
+                    const dx = Math.abs(left[i][0] - last[0]), dy = Math.abs(left[i][1] - last[1]);
+                    if (dx > SX + 1 || dy > SY + 1) continue;
+                    const dd = dx + dy;
+                    if (dd < bd) { bd = dd; bi = i; }
+                }
+                if (bi > -1) { s.push(left[bi]); left.splice(bi, 1); moved = true; }
+            }
+            strokes.push(s);
+        }
+        return strokes;
+    }
+    function pushStroke(pts) {
+        // Max 16 pairs per packet; continuation repeats the last point.
+        let i = 0;
+        let first = true;
+        while (i < pts.length) {
+            if (queue.length > MAX_PACKETS) return;
+            const pkt = [2];
+            if (!first && i > 0) {
+                pkt.push(pts[i - 1][0], pts[i - 1][1]);
+            }
+            first = false;
+            let n = pkt.length > 1 ? 15 : 16;
+            while (n > 0 && i < pts.length) {
+                pkt.push(pts[i][0], pts[i][1]);
+                i++;
+                n--;
+            }
+            if (pkt.length > 1) queue.push(pkt);
+            else break;
+        }
+    }
     function start() {
         if (timer || !regions || sid() == null) { setStatus(sid() == null ? 'mywsid: waiting…' : (!regions ? 'pick a photo first' : 'busy')); return; }
         queue.length = 0;
         queue.push([27, '1']);
+        queue.push([6, '1']);
         let lastHx = null;
-        const done = new Set();
         regions.forEach(r => {
             if (queue.length > MAX_PACKETS) return;
-            if (r.hx !== lastHx && !done.has(r.hx)) { queue.push([5, 'x' + r.hx]); done.add(r.hx); lastHx = r.hx; }
-            else if (r.hx !== lastHx) { queue.push([5, 'x' + r.hx]); lastHx = r.hx; }
-            r.contour.forEach(pt => {
-                if (queue.length > MAX_PACKETS) return;
-                const x1 = Math.round(pt[0] * SX), y1 = Math.round(pt[1] * SY);
-                queue.push([1, 2, x1, y1, Math.min(CW, x1 + Math.ceil(SX)), Math.min(CH, y1 + Math.ceil(SY))]);
-            });
+            if (r.hx !== lastHx) { queue.push([5, 'x' + r.hx]); lastHx = r.hx; }
+            orderStrokes(r.contour).forEach(s => pushStroke(s));
             if (r.seed && queue.length <= MAX_PACKETS) {
-                queue.push([5, 'x' + r.hx]);
-                lastHx = r.hx;
+                if (r.hx !== lastHx) { queue.push([5, 'x' + r.hx]); lastHx = r.hx; }
                 queue.push([7, Math.round((r.seed[0] + 0.5) * SX), Math.round((r.seed[1] + 0.5) * SY)]);
             }
         });
