@@ -4,5 +4,5 @@
   "description": "Live room list from /req/list, click a room to open its viewer",
   "entry": "room_scout.js",
   "mustContain": "__roomScout",
-  "version": "1.2"
+  "version": "1.3"
 }
