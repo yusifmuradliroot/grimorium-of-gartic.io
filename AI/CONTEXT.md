@@ -5,7 +5,7 @@ Firefox-based browsers + Violentmonkey. Everything is developed and tested again
 
 ## Repos
 - `abyss-of-gartic.io` (PRIVATE): raw source, protection layers DISABLED. All development happens here.
-- `grimorium-of-gartic.io` (PUBLIC, this repo): protected output = abyss + protection (legal + code). branch `Aetherial`.
+- `grimorium-of-gartic.io` (PUBLIC, this repo): protected output = abyss + protection (legal + code). branch `aetherial`.
 
 ## Omni layout (`omni/`)
 - `voyager/` — injector (loads the framework).

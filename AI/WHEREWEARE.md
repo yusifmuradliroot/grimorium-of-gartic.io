@@ -1,11 +1,11 @@
 # WHEREWEARE — living state (AI: keep this updated)
 
 ## Goal
-Rebuild `grimorium-of-gartic.io` from zero on branch `Aetherial` as a strong
+Rebuild `grimorium-of-gartic.io` from zero on branch `aetherial` as a strong
 Gartic.io scripting platform (SDK vision). Description: "Scripting platform for Gartic.io".
 
 ## Done
-- Repo cleaned, branch `main` deleted, `Aetherial` is default.
+- Repo cleaned, branch `main` deleted, `aetherial` is default.
 - Settings: description, topics (gartic-io, userscript, tampermonkey, violentmonkey, firefox), custom LICENSE, issues open, no branch protection.
 - Skeleton: `omni/{voyager,orbit,plugins}`, `docs/`, plus README, .gitignore, CHANGELOG.
 - Docs: `VERSIONING.md` (plugin single version, core separate, omni derived `v+o`), `TERMS.md` (user agreement).
