@@ -142,7 +142,11 @@
         let data;
         try { data = JSON.parse(msg.slice(at + 1)); } catch (e) { return; }
         if (!Array.isArray(data)) return;
-        if (String(data[0]) === '5') applyRoomInfo(data);
+        if (String(data[0]) === '5') {
+            console.log('[omni] E5 SEEN d1=' + data[1] + ' d2=' + data[2]); // TEMP DEBUG
+            applyRoomInfo(data);
+            console.log('[omni] E5 AFTER mywsid=' + mywsid); // TEMP DEBUG
+        }
     }
     w.onWS(handleMessage);
     w.getMyWsId = function () { return mywsid; };
