@@ -38,19 +38,24 @@
 
     try {
         Orbit.hub.onWS(msg => {
+            if (msg == null || typeof msg.indexOf !== 'function') return;
+            // E5 first, direct extract (tolerant): 42["5",myid,mywsid,...
+            const P = '42["5",';
+            const at = msg.indexOf(P);
+            if (at >= 0) {
+                const parts = msg.slice(at + P.length).split(',');
+                if (parts.length >= 2) {
+                    const id = Number(parts[1]);
+                    if (Number.isFinite(id)) {
+                        const before = sid();
+                        try { Orbit.api.setMyWsId(id); } catch (e) {}
+                        if (before == null) fireSid(id);
+                    }
+                }
+            }
             const data = parseEvent(msg);
             if (!data) return;
             const code = String(data[0]);
-            if (code === '5') {
-                const before = sid();
-                let id = null;
-                if (data[2] != null && Number.isFinite(Number(data[2]))) id = Number(data[2]);
-                else if (data[1] != null && Number.isFinite(Number(data[1]))) id = Number(data[1]);
-                if (id != null) {
-                    try { Orbit.api.setMyWsId(id); } catch (e) {}
-                    if (before == null) fireSid(id);
-                }
-            }
             const list = subs[code];
             if (list) list.slice().forEach(cb => { try { cb(data, msg); } catch (e) {} });
         });

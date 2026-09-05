@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '2.1';
+    const VERSION = '2.2';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -162,26 +162,23 @@
         // Identity NEVER cleared here: mywsid survives reconnects, next E5 overwrites it.
         try { w.dispatchEvent(new CustomEvent(open ? 'ws-session-open' : 'ws-session-close')); } catch (e) {}
     }
-    function applyRoomInfo(data) {
-        setSession(true);
-        if (data[2] != null && Number.isFinite(Number(data[2]))) setMyWsId(Number(data[2]));
-        else if (data[1] != null && Number.isFinite(Number(data[1]))) setMyWsId(Number(data[1]));
-        if (data[1] != null) { myid = data[1]; w.myid = data[1]; }
-    }
     function handleMessage(msg) {
-        if (typeof msg !== 'string') return;
+        if (msg == null || typeof msg.indexOf !== 'function') return;
         if (msg === '40' || msg.indexOf('40{') === 0) { setSession(true); return; }
         if (msg === '41') { setSession(false); return; }
-        const at = msg.indexOf('42[');
+        // Direct extract, no JSON: 42["5",myid,mywsid,... (tolerant to trailing bytes).
+        const P = '42["5",';
+        const at = msg.indexOf(P);
         if (at < 0) return;
-        let data;
-        try { data = JSON.parse(msg.slice(at + 1)); } catch (e) { return; }
-        if (!Array.isArray(data)) return;
-        if (String(data[0]) === '5') {
-            console.log('[omni] E5 SEEN d1=' + data[1] + ' d2=' + data[2]); // TEMP DEBUG
-            applyRoomInfo(data);
-            console.log('[omni] E5 AFTER mywsid=' + mywsid); // TEMP DEBUG
-        }
+        const parts = msg.slice(at + P.length).split(',');
+        if (parts.length < 2) return;
+        console.log('[omni] E5 SEEN myid=' + parts[0] + ' mywsid=' + parts[1]); // TEMP DEBUG
+        setSession(true);
+        const sidNum = Number(parts[1]);
+        if (Number.isFinite(sidNum)) setMyWsId(sidNum);
+        const midNum = Number(parts[0]);
+        if (Number.isFinite(midNum)) { myid = midNum; w.myid = midNum; }
+        console.log('[omni] E5 AFTER mywsid=' + mywsid); // TEMP DEBUG
     }
     w.onWS(handleMessage);
     w.setMyWsId = function (id) {

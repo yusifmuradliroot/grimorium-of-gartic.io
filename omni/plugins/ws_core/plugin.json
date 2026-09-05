@@ -4,5 +4,5 @@
   "description": "Shared packet bus: subscribe by code, send draw packets, mywsid with wait",
   "entry": "ws_core.js",
   "mustContain": "__omniWsCore",
-  "version": "1.0"
+  "version": "1.1"
 }
