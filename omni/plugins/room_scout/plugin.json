@@ -4,5 +4,5 @@
   "description": "Fullscreen room browser for whowhere pages, click a room to open its viewer",
   "entry": "room_scout.js",
   "mustContain": "__roomScout",
-  "version": "1.0"
+  "version": "1.1"
 }
