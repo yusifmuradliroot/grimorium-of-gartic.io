@@ -1,8 +1,8 @@
 {
   "id": "pixel_drawer",
   "name": "Pixel Drawer",
-  "description": "Fixed 8x8 toggle grid, 1 packet per 250ms",
+  "description": "Photo to 8x8, 2-2-2 bit color, 1 packet per 250ms",
   "entry": "pixel_drawer.js",
   "mustContain": "__pixelDrawer",
-  "version": "2.0"
+  "version": "2.1"
 }
