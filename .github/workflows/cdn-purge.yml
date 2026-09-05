@@ -1,0 +1,14 @@
+name: cdn-purge
+on:
+  push:
+    branches: [aetherial]
+    paths: ['omni/**']
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for f in omni/voyager/voyager.user.js omni/omni/omni.js omni/plugins/index.json; do
+            curl -s "https://purge.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/$f" > /dev/null
+            echo "purged $f"
+          done
