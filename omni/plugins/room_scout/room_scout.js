@@ -18,7 +18,22 @@
     w.__roomScout = true;
 
     const RESERVED = { rooms: 1, create: 1, join: 1, viewer: 1, play: 1, theme: 1, apps: 1, list: 1, options: 1, privacy: 1, discord: 1, download: 1, gartic: 1, itunes: 1, instagram: 1, logout: 1, details: 1, service: 1, req: 1, id: 1, images: 1, app: 1 };
-    let overlay = null, listEl = null;
+    const HIST_KEY = 'room_scout_history';
+    let overlay = null, listEl = null, histEl = null;
+
+    function getHist() {
+        try {
+            const v = localStorage.getItem(HIST_KEY);
+            const a = v ? JSON.parse(v) : [];
+            return Array.isArray(a) ? a : [];
+        } catch (e) { return []; }
+    }
+    function saveHist(code) {
+        try {
+            const a = [code].concat(getHist().filter(c => c !== code)).slice(0, 20);
+            localStorage.setItem(HIST_KEY, JSON.stringify(a));
+        } catch (e) {}
+    }
 
     function findRooms() {
         const found = new Map();
@@ -39,9 +54,28 @@
     function go(code) {
         code = (code || '').trim().replace(/^\//, '').replace(/\/viewer\/?$/, '');
         if (!/^[A-Za-z0-9]{3,8}$/.test(code)) return;
+        saveHist(code);
         location.href = '/' + code + '/viewer';
     }
+    function renderHist() {
+        if (!histEl) return;
+        histEl.innerHTML = '';
+        getHist().forEach(code => {
+            const b = document.createElement('button');
+            b.style.cssText = 'padding:6px 12px !important;background:#1e272e !important;color:#5dade2 !important;border:1px solid #34495e !important;border-radius:14px !important;font:bold 12px Arial !important;cursor:pointer !important;';
+            b.textContent = code;
+            b.addEventListener('click', () => go(code));
+            histEl.appendChild(b);
+        });
+        if (!getHist().length) {
+            const d = document.createElement('div');
+            d.style.cssText = 'color:#7f8c8d !important;font:12px Arial !important;';
+            d.textContent = 'No recent rooms yet.';
+            histEl.appendChild(d);
+        }
+    }
     function render() {
+        renderHist();
         if (!listEl) return;
         listEl.innerHTML = '';
         const rooms = findRooms();
@@ -77,6 +111,11 @@
         x.addEventListener('click', () => overlay.remove());
         head.appendChild(title);
         head.appendChild(x);
+        const histTitle = document.createElement('div');
+        histTitle.style.cssText = 'color:#7f8c8d !important;font:700 12px Arial !important;';
+        histTitle.textContent = 'Recent';
+        histEl = document.createElement('div');
+        histEl.style.cssText = 'display:flex !important;flex-wrap:wrap !important;gap:6px !important;';
         listEl = document.createElement('div');
         listEl.style.cssText = 'display:flex !important;flex-direction:column !important;gap:8px !important;';
         const bar = document.createElement('div');
@@ -96,6 +135,8 @@
         bar.appendChild(goBtn);
         bar.appendChild(reBtn);
         card.appendChild(head);
+        card.appendChild(histTitle);
+        card.appendChild(histEl);
         card.appendChild(listEl);
         card.appendChild(bar);
         overlay.appendChild(card);
