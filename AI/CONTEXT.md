@@ -9,7 +9,7 @@ Firefox-based browsers + Violentmonkey. Everything is developed and tested again
 
 ## Omni layout (`omni/`)
 - `voyager/` — injector (loads the framework).
-- `orbit/` — framework: WS Hub + API Engine + GUI + Loader.
+- `omni/` — framework, ex-orbit: WS Hub + API Engine + GUI + Loader. Ships as `omni.fs`.
 - `plugins/` — plugins. Discovery chain:
   1. `index.json` → folder names (e.g. `["pixel_drawer"]`)
   2. `<plugin>/plugin.json` → id, name, description, entry file, mustContain, version
@@ -24,4 +24,4 @@ Firefox-based browsers + Violentmonkey. Everything is developed and tested again
 - User-facing branding is always "Omni" (no Voyager/Orbit names in GUI).
 
 ## Versions
-See `docs/VERSIONING.md`. Omni = `voyager+orbit` (e.g. `1.0+1.1`).
+See `docs/VERSIONING.md`. No derived version: voyager and omni version independently.

@@ -2,8 +2,8 @@
 
 1. **Version discipline.** Every script/plugin update MUST bump the version correctly:
    - Plugin → bump `version` in its own `plugin.json`. Never touch `@version` in the `.js` by hand (build syncs it).
-   - Core parts (`voyager`, `orbit`) → each bumps its own version independently.
-   - Omni version is derived (`voyager+orbit`), never counted separately.
+   - Parts (`voyager`, `omni` framework) → each bumps its own version independently.
+   - No derived version: omni IS the framework file. ("orbit" is retired.)
    - Forgetting a version bump is a defect. See `docs/VERSIONING.md`.
 2. **abyss → grimorium flow.** Raw development happens in private `abyss`. This repo receives only protected output. Never weaken protection layers (`verify()`, `mustContain`, omni-aware markers).
 3. **Small steps.** One decision, one change, one commit per agreed step. No unsolicited big refactors.
@@ -17,7 +17,7 @@
     no overthinking. A WARN is not a failure; proceed.
 9. **Target environment: Firefox-based browsers + Violentmonkey.** All code MUST work there.
    No Chrome-only APIs. Check every `GM_*` / `unsafeWindow` usage against Violentmonkey behavior.
-10. **No AI notes in shipped code.** `omni/voyager`, `omni/orbit` and plugin `.js` files must contain
+10. **No AI notes in shipped code.** `omni/voyager`, `omni/omni` and plugin files must contain
    zero AI-to-AI notes, AI TODOs, or session references. Exception: educational `example/`-style
    scripts may carry notes, but written for HUMANS learning the code. AI-to-AI memory belongs
    only in `AI/` files. (In private `abyss`, AI annotation is fully allowed.)
