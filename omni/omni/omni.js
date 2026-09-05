@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '2.4';
+    const VERSION = '2.5';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -148,7 +148,15 @@
     let mywsid = null;
     let myid = null;
     let sessionOpen = false;
+    const roster = new Map();
     w.__omniApiReady = true;
+
+    function isPlayerObj(o) {
+        return o !== null && typeof o === 'object' && typeof o.nick === 'string';
+    }
+    function emitRoster() {
+        try { w.dispatchEvent(new CustomEvent('api-roster', { detail: { size: roster.size } })); } catch (e) {}
+    }
 
     function setMyWsId(id) {
         if (id === mywsid) return;
@@ -169,7 +177,7 @@
         // Direct extract, no JSON: 42["5",myid,mywsid,... (tolerant to trailing bytes).
         const P = '42["5",';
         const at = msg.indexOf(P);
-        if (at < 0) return;
+        if (at < 0) { handleRosterDelta(msg); return; }
         const parts = msg.slice(at + P.length).split(',');
         if (parts.length < 2) return;
         console.log('[omni] E5 SEEN myid=' + parts[0] + ' mywsid=' + parts[1]); // TEMP DEBUG
@@ -179,6 +187,32 @@
         const midNum = Number(parts[0]);
         if (Number.isFinite(midNum)) { myid = midNum; w.myid = midNum; }
         console.log('[omni] E5 AFTER mywsid=' + mywsid); // TEMP DEBUG
+        // Roster needs full parse: best-effort (ids above never depend on it).
+        try {
+            const data = JSON.parse(msg.slice(at + 1));
+            if (Array.isArray(data) && String(data[0]) === '5') applyRosterList(data[5]);
+        } catch (e) {}
+        return;
+    }
+    function handleRosterDelta(msg) {
+        // Join (23) / leave (24), best-effort full parse. Identity untouched.
+        const at = msg.indexOf('42[');
+        if (at < 0) return;
+        let data;
+        try { data = JSON.parse(msg.slice(at + 1)); } catch (e) { return; }
+        if (!Array.isArray(data)) return;
+        const code = String(data[0]);
+        if (code === '23') {
+            if (isPlayerObj(data[1])) { roster.set(String(data[1].id), data[1]); emitRoster(); }
+        } else if (code === '24') {
+            if (data[1] != null && roster.delete(String(data[1]))) emitRoster();
+        }
+    }
+    function applyRosterList(arr) {
+        if (!Array.isArray(arr)) return;
+        roster.clear();
+        arr.forEach(p => { if (isPlayerObj(p)) roster.set(String(p.id), p); });
+        emitRoster();
     }
     w.onWS(handleMessage);
     w.setMyWsId = function (id) {
@@ -188,6 +222,9 @@
     };
     w.getMyWsId = function () { return mywsid; };
     w.getMyId = function () { return myid; };
+    w.getPlayers = function () {
+        try { return Array.from(roster.values()); } catch (e) { return []; }
+    };
     w.getSession = function () { return sessionOpen || mywsid != null; };
 
     // ============ 3) w.Orbit: the only API plugins may use ============
@@ -211,7 +248,8 @@
             setMyWsId: function (id) { return w.setMyWsId(id); },
             getMyId: function () { return w.getMyId(); },
             getSession: function () { return w.getSession(); },
-            getTheme: function () { return currentTheme(); }
+            getTheme: function () { return currentTheme(); },
+            getPlayers: function () { return w.getPlayers(); }
         },
         store: {
             get: function (k, d) { try { return gGet(k, d); } catch (e) { return d; } },

@@ -82,6 +82,13 @@
             const i = list.indexOf(cb);
             if (i > -1) list.splice(i, 1);
         },
+        getPlayers: function () {
+            try { return Orbit.api.getPlayers(); } catch (e) { return []; }
+        },
+        onRoster: function (cb) {
+            if (typeof cb !== 'function') return;
+            try { Orbit.events.on('api-roster', cb); } catch (e) {}
+        },
         getSid: function () { return sid(); },
         onSid: function (cb) {
             if (typeof cb !== 'function') return;
