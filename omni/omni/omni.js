@@ -48,11 +48,15 @@
         inst.__omniPatched = true;
         activeWS = inst;
         const realSend = inst.send.bind(inst);
-        inst.send = function (data) { return realSend(data); };
-        inst.addEventListener('open', () => { activeWS = inst; });
-        inst.addEventListener('close', () => { if (activeWS === inst) activeWS = null; });
+        inst.send = function (data) {
+            console.log('%c[WS →]', 'color:#e74c3c;font-weight:bold', data); // TEMP DEBUG
+            return realSend(data);
+        };
+        inst.addEventListener('open', () => { activeWS = inst; console.log('%c[WS OPEN]', 'color:#27ae60;font-weight:bold'); }); // TEMP DEBUG
+        inst.addEventListener('close', () => { if (activeWS === inst) activeWS = null; console.log('%c[WS CLOSE]', 'color:#c0392b'); }); // TEMP DEBUG
         inst.addEventListener('message', e => {
             const msg = e.data;
+            console.log('%c[WS ←]', 'color:#2ecc71;font-weight:bold', msg); // TEMP DEBUG
             for (let i = 0; i < listeners.length; i++) try { listeners[i](msg); } catch (err) {}
         });
     }
