@@ -21,18 +21,17 @@
     }
 
     function inspect(msg, dir) {
-        if (typeof msg !== 'string') {
-            try { msg = String(msg); } catch (e) { return; }
-        }
+        if (msg == null || typeof msg.indexOf !== 'function' || typeof msg.slice !== 'function') return;
         console.log('[ws_tools ' + dir + ']', msg.slice(0, 160));
         if (dir !== 'in') return;
-        const at = msg.indexOf('42[');
+        // Direct extract, no JSON: 42["5",myid,mywsid,... → 2nd token after prefix.
+        const P = '42["5",';
+        const at = msg.indexOf(P);
         if (at < 0) return;
-        let data;
-        try { data = JSON.parse(msg.slice(at + 1)); } catch (e) { return; }
-        if (!Array.isArray(data) || String(data[0]) !== '5') return;
-        if (data[2] != null && Number.isFinite(Number(data[2]))) writeSid(Number(data[2]), 'd2');
-        else if (data[1] != null && Number.isFinite(Number(data[1]))) writeSid(Number(data[1]), 'd1-fallback');
+        const parts = msg.slice(at + P.length).split(',');
+        if (parts.length < 2) return;
+        const sid = Number(parts[1]);
+        if (Number.isFinite(sid)) writeSid(sid, 'direct');
     }
 
     let pill = null;
@@ -67,5 +66,5 @@
     setInterval(() => paint(), 2000);
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => ensureUI());
     else ensureUI();
-    console.log('[ws_tools] v1.3 logger + catcher active');
+    console.log('[ws_tools] v1.4 logger + catcher active');
 })();
