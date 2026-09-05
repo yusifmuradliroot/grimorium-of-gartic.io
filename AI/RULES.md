@@ -33,3 +33,6 @@
     - "konsol erişimim yok" → user is on mobile: diagnose via visual feedback only (badges, on-screen
       status). Never say "check the console".
     - "konsol erişimim var" → user is on desktop: console logs may be requested and used.
+14. **Two-repo sync.** Layout, schema, rule and convention changes apply to BOTH repos (abyss raw,
+    grimorium protected — adapt, don't blind-copy). After touching one side, mirror to the other
+    in the same session and run `tools/check.py` on both. The repos must never drift structurally.

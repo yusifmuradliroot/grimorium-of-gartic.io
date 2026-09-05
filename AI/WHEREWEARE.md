@@ -22,6 +22,7 @@ Gartic.io scripting platform (SDK vision). Description: "Scripting platform for 
 ## Done (abyss side)
 - Abyss reorganized: `omni/{voyager,orbit,plugins,dist}` raw layout mirroring grimorium,
   dead files deleted (2.0M → 0.9M), own AGENTS.md + AI/ (full annotation allowed). Push `2c160f0`.
+- Two-repo sync active: `tools/check.py` on both sides, rule 14 in both RULES.md.
 
 ## In progress
 - (next AI: fill here)
