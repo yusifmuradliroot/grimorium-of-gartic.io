@@ -106,24 +106,28 @@
     }
     function solveToken(cb) {
         ensureTurnstileAPI(ok => {
-            if (!ok) { cb(null); return; }
+            if (!ok) { cb(null, 'ts-api missing'); return; }
+            if (!document.body) { cb(null, 'no body'); return; }
             const box = document.createElement('div');
-            box.style.cssText = 'position:fixed !important;left:-9999px !important;top:0 !important;width:10px !important;height:10px !important;overflow:hidden !important;';
+            box.style.cssText = 'position:fixed !important;left:8px !important;bottom:8px !important;width:65px !important;height:65px !important;overflow:hidden !important;opacity:.01 !important;z-index:1 !important;';
             document.body.appendChild(box);
             let wid = null, finished = false;
-            const to = setTimeout(() => { if (!finished) { finished = true; cleanup(); cb(null); } }, 25000);
-            function cleanup() { try { if (wid !== null) w.turnstile.remove(wid); } catch (e) {} try { box.remove(); } catch (e) {} }
+            const to = setTimeout(() => { if (!finished) { finished = true; cleanup(); cb(null, 'ts timeout'); } }, 25000);
+            function cleanup() { try { if (wid !== null && wid !== undefined) w.turnstile.remove(wid); } catch (e) {} try { box.remove(); } catch (e) {} }
+            function fail(stage) { if (!finished) { finished = true; clearTimeout(to); cleanup(); cb(null, stage); } }
+            let rendered = false;
             try {
                 wid = w.turnstile.render(box, {
-                    sitekey: TS_SITEKEY, size: 'invisible',
+                    sitekey: TS_SITEKEY,
                     callback: tk => { if (!finished) { finished = true; clearTimeout(to); cleanup(); cb(tk); } },
-                    'error-callback': () => { if (!finished) { finished = true; clearTimeout(to); cleanup(); cb(null); } },
-                    'expired-callback': () => { if (!finished) { finished = true; clearTimeout(to); cleanup(); cb(null); } }
+                    'error-callback': () => fail('ts widget error'),
+                    'expired-callback': () => fail('ts expired')
                 });
-                w.turnstile.execute(wid);
-            } catch (e) {
-                if (!finished) { finished = true; clearTimeout(to); cleanup(); cb(null); }
-            }
+                rendered = (wid !== null && wid !== undefined);
+            } catch (e) { fail('ts render throw'); return; }
+            if (!rendered) { fail('ts render empty'); return; }
+            try { w.turnstile.execute(wid); }
+            catch (e) { fail('ts execute throw'); }
         });
     }
     function cleanSocket() {
