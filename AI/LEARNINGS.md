@@ -1,5 +1,14 @@
 # LEARNINGS — AI memory (AI: append here, never delete)
 
+## 2026-09-05 — infra-building session with user
+- User wants micro-steps: one decision per message, short answers, approval before each move.
+  Long briefings get rejected ("daha kisa-kisa"). When user says "anlamadim", re-explain with a
+  concrete example, not more abstraction.
+- User decides fast ("ekle", "yaz", "evet", "devam"). Don't slow down with extra questions
+  after approval — execute immediately.
+- Strategic calls stay with the user (license type, version scheme, directory layout). Propose
+  2-3 options max, recommend one, let them pick.
+
 ## 2026-09-05 — mywsid saga
 - `setSession(false)` on Socket.IO `41` was clearing mywsid → plugins lost identity on every reconnect.
   FIX: preserve mywsid on `41`; only the next `5` packet overwrites it. mywsid must be owned by the

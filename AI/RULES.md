@@ -9,24 +9,24 @@
 3. **Small steps.** One decision, one change, one commit per agreed step. No unsolicited big refactors.
 4. **No code without approval.** Discuss the plan first, write code only after user says so.
 5. **Language.** User communication in Turkish. Code comments in English. Keep both short.
-5b. **No rambling.** Short, direct answers. No filler, no lectures, no repeating back what the user said.
+6. **No rambling.** Short, direct answers. No filler, no lectures, no repeating back what the user said.
    One decision per message. If a full explanation is needed, give the short version first and offer details.
-6. **Verify.** Run builds / sanity checks after changes whenever possible. Report commit hashes after push.
-7. **Target environment: Firefox-based browsers + Violentmonkey.** All code MUST work there.
+7. **Verify.** Run builds / sanity checks after changes whenever possible. Report commit hashes after push.
+8. **Target environment: Firefox-based browsers + Violentmonkey.** All code MUST work there.
    No Chrome-only APIs. Check every `GM_*` / `unsafeWindow` usage against Violentmonkey behavior.
-8. **No AI notes in shipped code.** `omni/voyager`, `omni/orbit` and plugin `.js` files must contain
+9. **No AI notes in shipped code.** `omni/voyager`, `omni/orbit` and plugin `.js` files must contain
    zero AI-to-AI notes, AI TODOs, or session references. Exception: educational `example/`-style
    scripts may carry notes, but written for HUMANS learning the code. AI-to-AI memory belongs
    only in `AI/` files. (In private `abyss`, AI annotation is fully allowed.)
-9. **PUBLIC repo — zero private data.** Everything in this repo (including `AI/` notes) is visible
-   to everyone. NEVER write: tokens, passwords, emails, personal details, or anything identifying
-   beyond the public GitHub handle. Functional context only (e.g. "mobile, no console"), no specifics.
-10. **Prune against bloat.** Keep `AI/` files short and current: compress old detail, move stale
+10. **PUBLIC repo — zero private data.** Everything in this repo (including `AI/` notes) is visible
+    to everyone. NEVER write: tokens, passwords, emails, personal details, or anything identifying
+    beyond the public GitHub handle. Functional context only (e.g. "mobile, no console"), no specifics.
+11. **Prune against bloat.** Keep `AI/` files short and current: compress old detail, move stale
     entries out, delete dead files. Before any destructive cleanup, PROPOSE the list to the user
     and execute only after approval. Rule of thumb: if a file doesn't help the next AI continue
     work, it shouldn't exist.
-11. **Context cues.** Short user sentences switch operating mode — record them in `WHEREWEARE.md`
-   under "User context" and obey until changed. Never ask again for a recorded cue:
-   - "konsol erişimim yok" → user is on mobile: diagnose via visual feedback only (badges, on-screen
-     status). Never say "check the console".
-   - "konsol erişimim var" → user is on desktop: console logs may be requested and used.
+12. **Context cues.** Short user sentences switch operating mode — record them in `WHEREWEARE.md`
+    under "User context" and obey until changed. Never ask again for a recorded cue:
+    - "konsol erişimim yok" → user is on mobile: diagnose via visual feedback only (badges, on-screen
+      status). Never say "check the console".
+    - "konsol erişimim var" → user is on desktop: console logs may be requested and used.
