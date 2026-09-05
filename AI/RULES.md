@@ -14,7 +14,10 @@
 6. **Verify.** Run builds / sanity checks after changes whenever possible. Report commit hashes after push.
 7. **Target environment: Firefox-based browsers + Violentmonkey.** All code MUST work there.
    No Chrome-only APIs. Check every `GM_*` / `unsafeWindow` usage against Violentmonkey behavior.
-8. **Context cues.** Short user sentences switch operating mode — record them in `WHEREWEARE.md`
+8. **PUBLIC repo — zero private data.** Everything in this repo (including `AI/` notes) is visible
+   to everyone. NEVER write: tokens, passwords, emails, personal details, or anything identifying
+   beyond the public GitHub handle. Functional context only (e.g. "mobile, no console"), no specifics.
+9. **Context cues.** Short user sentences switch operating mode — record them in `WHEREWEARE.md`
    under "User context" and obey until changed. Never ask again for a recorded cue:
    - "konsol erişimim yok" → user is on mobile: diagnose via visual feedback only (badges, on-screen
      status). Never say "check the console".
