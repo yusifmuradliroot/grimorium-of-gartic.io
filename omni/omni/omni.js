@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '1.6';
+    const VERSION = '1.7';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -244,6 +244,15 @@
         } catch (e) {}
     }
     const loadedMeta = {};
+    function disableStored(id) {
+        const raw = gGet(STORE_PLUGINS, []);
+        const go = sel => {
+            const arr = Array.isArray(sel) ? sel.filter(p => p && p.id !== id) : [];
+            gSet(STORE_PLUGINS, arr);
+        };
+        if (raw && typeof raw.then === 'function') raw.then(go);
+        else go(raw);
+    }
     function loadPlugin(id, file, mustContain, cb) {
         const url = PLUGIN_BASE + file;
         fetchText(url,
@@ -256,13 +265,44 @@
             () => { cb && cb(false); });
     }
 
-    // ============ 5) MENU: agreement + plugin selection ============
+    // ============ 5) MENU step 1: agreement (big, single) ============
     function ensureBody(fn) {
         if (document.body) fn();
         else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
         else setTimeout(() => ensureBody(fn), 200);
     }
+    function showAgreement() {
+        ensureBody(() => {
+            if (document.getElementById('omni-overlay')) return;
+            const overlay = document.createElement('div');
+            overlay.id = 'omni-overlay';
+            overlay.style.cssText = 'position:fixed !important;inset:0 !important;z-index:2147483647 !important;background:rgba(0,0,0,.72) !important;display:flex !important;align-items:center !important;justify-content:center !important;font-family:Arial,sans-serif !important;';
+            overlay.innerHTML =
+                '<div id="omni-card" style="width:560px !important;max-width:94vw !important;max-height:88vh !important;overflow:auto !important;background:#fff !important;border-radius:16px !important;box-shadow:0 20px 60px rgba(0,0,0,.4) !important;">' +
+                '<div style="padding:20px 24px !important;background:#0f1419 !important;color:#fff !important;font:700 18px Arial !important;">Omni — User Agreement</div>' +
+                '<div style="padding:24px !important;display:flex !important;flex-direction:column !important;gap:12px !important;font:15px/1.6 Arial !important;color:#2c3e50 !important;">' +
+                '<div>1. This tool is for personal use only.</div>' +
+                '<div>2. Do not disturb other users or disrupt the game.</div>' +
+                '<div>3. Ban risk is yours alone.</div>' +
+                '<div>4. Provided as-is, no warranty.</div>' +
+                '<div>5. Never share derived works publicly.</div>' +
+                '<div>6. Comply with a deletion request, no exception.</div>' +
+                '<div style="display:flex !important;gap:10px !important;margin-top:8px !important;"><button id="omni-decline" style="flex:1 !important;padding:14px !important;border:1px solid #b2bec3 !important;background:#fff !important;border-radius:10px !important;font:bold 15px Arial !important;cursor:pointer !important;">Decline</button><button id="omni-accept" style="flex:2 !important;padding:14px !important;border:none !important;background:#27ae60 !important;color:#fff !important;border-radius:10px !important;font:bold 15px Arial !important;cursor:pointer !important;">Accept &amp; Continue</button></div>' +
+                '</div></div>';
+            document.body.appendChild(overlay);
+            overlay.querySelector('#omni-decline').addEventListener('click', () => overlay.remove());
+            overlay.querySelector('#omni-accept').addEventListener('click', () => {
+                gSet(STORE_AGREED, true);
+                overlay.remove();
+                showPlugins();
+            });
+        });
+    }
+    // ============ 5b) MENU step 2: plugin selection ============
     function showMenu() {
+        showPlugins();
+    }
+    function showPlugins() {
         ensureBody(() => {
             const overlay = document.createElement('div');
             overlay.id = 'omni-overlay';
@@ -271,7 +311,6 @@
                 '<div id="omni-card" style="width:440px !important;max-width:92vw !important;background:#fff !important;border-radius:16px !important;overflow:hidden !important;box-shadow:0 20px 60px rgba(0,0,0,.4) !important;">' +
                 '<div style="padding:16px 20px !important;background:#0f1419 !important;color:#fff !important;font:700 15px Arial !important;">Omni</div>' +
                 '<div style="padding:20px !important;display:flex !important;flex-direction:column !important;gap:14px !important;">' +
-                '<label style="font:13px Arial !important;color:#2c3e50 !important;display:flex !important;gap:8px !important;align-items:flex-start !important;"><input type="checkbox" id="omni-agree" style="margin-top:2px !important;"> Personal use only. I will not disturb other users, share derived works publicly, and I accept the ban risk.</label>' +
                 '<div id="omni-plugin-list" style="display:flex !important;flex-direction:column !important;gap:8px !important;font:13px Arial !important;color:#2c3e50 !important;">Loading plugins…</div>' +
                 '<div style="display:flex !important;gap:8px !important;justify-content:flex-end !important;"><button id="omni-skip" style="padding:10px 16px !important;border:1px solid #b2bec3 !important;background:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;">Skip</button><button id="omni-install" style="padding:10px 16px !important;border:none !important;background:#0f1419 !important;color:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;">Install &amp; Run</button></div>' +
                 '</div></div>';
@@ -312,8 +351,6 @@
     function wire(list, overlay) {
         overlay.querySelector('#omni-skip').addEventListener('click', () => overlay.remove());
         overlay.querySelector('#omni-install').addEventListener('click', () => {
-            if (!overlay.querySelector('#omni-agree').checked) return;
-            gSet(STORE_AGREED, true);
             const sel = [];
             list.querySelectorAll('input:checked').forEach(cb => {
                 const row = cb.closest('label');
@@ -327,9 +364,9 @@
     function boot() {
         ensureSettingsButton();
         const agreed = gGet(STORE_AGREED, false);
-        if (agreed && typeof agreed.then === 'function') { agreed.then(a => { a ? loadSelected() : showMenu(); }); return; }
+        if (agreed && typeof agreed.then === 'function') { agreed.then(a => { a ? loadSelected() : showAgreement(); }); return; }
         if (agreed) loadSelected();
-        else showMenu();
+        else showAgreement();
     }
     function loadSelected() {
         const raw = gGet(STORE_PLUGINS, []);
@@ -395,6 +432,10 @@
             un.textContent = 'Unload';
             un.style.cssText = 'padding:6px 10px !important;border:1px solid #b2bec3 !important;background:#fff !important;border-radius:6px !important;font:bold 12px Arial !important;cursor:pointer !important;';
             un.addEventListener('click', () => { unloadPlugin(id); delete loadedMeta[id]; row.remove(); });
+            const dis = document.createElement('button');
+            dis.textContent = 'Disable';
+            dis.style.cssText = 'padding:6px 10px !important;border:none !important;background:#c0392b !important;color:#fff !important;border-radius:6px !important;font:bold 12px Arial !important;cursor:pointer !important;';
+            dis.addEventListener('click', () => { unloadPlugin(id); delete loadedMeta[id]; disableStored(id); row.remove(); });
             const re = document.createElement('button');
             re.textContent = 'Reload';
             re.style.cssText = 'padding:6px 10px !important;border:none !important;background:#0f1419 !important;color:#fff !important;border-radius:6px !important;font:bold 12px Arial !important;cursor:pointer !important;';
@@ -406,6 +447,7 @@
             });
             btns.appendChild(un);
             btns.appendChild(re);
+            btns.appendChild(dis);
             row.appendChild(nm);
             row.appendChild(btns);
             body.appendChild(row);
