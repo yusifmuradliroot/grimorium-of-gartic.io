@@ -1,6 +1,6 @@
 # AGENTS.md — AI entry point
 
-You are working in **grimorium-of-gartic.io** (public Gartic.io scripting platform, branch `Aetherial`).
+You are working in **grimorium-of-gartic.io** (public Gartic.io scripting platform, branch `aetherial`).
 
 ## Mandatory at session start
 Read these files IN ORDER before doing anything:
