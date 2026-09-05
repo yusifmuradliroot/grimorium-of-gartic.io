@@ -60,6 +60,7 @@
         inst.addEventListener('message', e => {
             const msg = e.data;
             console.log('%c[WS ←]', 'color:#2ecc71;font-weight:bold', msg); // TEMP DEBUG
+            if (typeof msg === 'string' && msg.indexOf('42["5"') === 0) console.log('[omni] E5 dispatching to ' + listeners.length + ' listeners'); // TEMP DEBUG
             for (let i = 0; i < listeners.length; i++) try { listeners[i](msg); } catch (err) {}
         });
     }
@@ -434,5 +435,6 @@
     }
 
     console.log('%c[omni] core v' + VERSION + ' ready', 'color:#8e44ad;font-weight:bold');
+    console.log('[omni] boot diag: __omniWsHub=' + !!w.__omniWsHub + ' badges=' + document.querySelectorAll('#omni-debug-badge').length + ' listeners=' + listeners.length); // TEMP DEBUG
     boot();
 })();
