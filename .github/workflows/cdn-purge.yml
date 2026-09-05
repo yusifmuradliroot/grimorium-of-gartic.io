@@ -8,7 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
+          fail=0
           for f in omni/voyager/voyager.user.js omni/omni/omni.js omni/plugins/index.json; do
-            curl -s "https://purge.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/$f" > /dev/null
-            echo "purged $f"
+            resp=$(curl -s "https://purge.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/$f")
+            echo "$f -> $(echo "$resp" | head -c 200)"
+            case "$resp" in
+              *'"throttled":true'*) echo "THROTTLED: $f"; fail=1;;
+            esac
           done
+          exit $fail
