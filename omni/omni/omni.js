@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '2.2';
+    const VERSION = '2.3';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -284,12 +284,13 @@
         if (!Array.isArray(raw)) return [];
         return raw.filter(p => p && p.id !== id && (p.deps || []).indexOf(id) > -1).map(p => p.id);
     }
-    function loadPlugin(id, file, mustContain, cb) {
+    function loadPlugin(id, file, mustContain, ver, cb) {
+        if (typeof ver === 'function') { cb = ver; ver = ''; }
         const url = PLUGIN_BASE + file;
         fetchText(url,
             code => {
                 const ok = executePlugin(code, url, { id: id, mustContain: mustContain });
-                if (ok) loadedMeta[id] = { file: file, must: mustContain };
+                if (ok) loadedMeta[id] = { file: file, must: mustContain, ver: ver || '' };
                 else delete loadedMeta[id];
                 cb && cb(ok);
             },
@@ -370,6 +371,7 @@
                                 row.appendChild(tx);
                                 row.dataset.file = (info && info.entry) ? n + '/' + info.entry : n + '.js';
                                 row.dataset.must = (info && info.mustContain) || n;
+                                row.dataset.ver = (info && info.version) || '';
                                 row.dataset.deps = JSON.stringify((info && info.dependencies) || []);
                                 list.appendChild(row);
                                 if (--pending === 0) wire(list, overlay);
@@ -431,7 +433,7 @@
                 const row = cb.closest('label');
                 let deps = [];
                 try { deps = JSON.parse(row.dataset.deps || '[]'); } catch (e) {}
-                sel.push({ id: cb.value, file: row.dataset.file, must: row.dataset.must, deps: deps });
+                sel.push({ id: cb.value, file: row.dataset.file, must: row.dataset.must, deps: deps, ver: row.dataset.ver || '' });
             });
             gSet(STORE_PLUGINS, sel);
             overlay.remove();
@@ -484,7 +486,7 @@
                     meta => {
                         try {
                             const info = JSON.parse(meta);
-                            byId[id] = { id: id, file: id + '/' + (info.entry || (id + '.js')), must: info.mustContain || id, deps: info.dependencies || [] };
+                            byId[id] = { id: id, file: id + '/' + (info.entry || (id + '.js')), must: info.mustContain || id, deps: info.dependencies || [], ver: info.version || '' };
                         } catch (e) {}
                         if (--pending === 0) loadOrdered(Object.keys(byId).map(k => byId[k]));
                     },
@@ -521,7 +523,7 @@
                 next();
                 return;
             }
-            loadPlugin(p.id, p.file, p.must, ok => {
+            loadPlugin(p.id, p.file, p.must, p.ver || '', ok => {
                 console.log('[omni] plugin ' + p.id + ': ' + (ok ? 'loaded' : 'FAILED'));
                 if (!ok) failed[id] = true;
                 next();
@@ -579,7 +581,8 @@
             const row = document.createElement('div');
             row.style.cssText = 'display:flex !important;gap:8px !important;align-items:center !important;justify-content:space-between !important;';
             const nm = document.createElement('span');
-            nm.textContent = id;
+            const mv = (loadedMeta[id] && loadedMeta[id].ver) || '';
+            nm.textContent = mv ? id + ' v' + mv : id;
             const btns = document.createElement('div');
             btns.style.cssText = 'display:flex !important;gap:6px !important;';
             const un = document.createElement('button');
@@ -608,7 +611,7 @@
                 const m = loadedMeta[id];
                 if (!m) return;
                 unloadPlugin(id);
-                loadPlugin(id, m.file, m.must, ok => { nm.textContent = id + (ok ? '' : ' (FAILED)'); });
+                loadPlugin(id, m.file, m.must, m.ver || '', ok => { nm.textContent = id + (ok ? '' : ' (FAILED)'); });
             });
             btns.appendChild(un);
             btns.appendChild(re);
