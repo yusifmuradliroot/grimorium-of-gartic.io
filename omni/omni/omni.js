@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '1.1';
+    const VERSION = '1.2';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -38,14 +38,17 @@
     }
 
     // ============ 1) WS HUB ============
+    if (w.__omniWsHub || w.__garticWsHub) {
+        console.error('[omni] OLD CORE DETECTED (pre-Omni hub). Remove old userscripts, keep only the Omni loader — both cores are running!');
+    }
     const NativeWS = w.WebSocket;
     let activeWS = null;
     const listeners = [];
     w.__omniWsHub = true;
 
     function patchInstance(inst) {
-        if (inst.__omniPatched) return;
-        inst.__omniPatched = true;
+        if (inst.__omniCorePatched) return;
+        inst.__omniCorePatched = true;
         activeWS = inst;
         const realSend = inst.send.bind(inst);
         inst.send = function (data) {
@@ -74,7 +77,7 @@
 
     const origAddEvent = NativeWS.prototype.addEventListener;
     NativeWS.prototype.addEventListener = function (type, cb, opts) {
-        if (type === 'message' && typeof cb === 'function' && !this.__omniPatched) {
+        if (type === 'message' && typeof cb === 'function' && !this.__omniCorePatched) {
             activeWS = this;
             patchInstance(this);
         }
@@ -86,7 +89,7 @@
             Object.defineProperty(NativeWS.prototype, 'onmessage', {
                 get: function () { return desc.get.call(this); },
                 set: function (cb) {
-                    if (typeof cb === 'function' && !this.__omniPatched) {
+                    if (typeof cb === 'function' && !this.__omniCorePatched) {
                         activeWS = this;
                         patchInstance(this);
                     }
