@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      1.3
+// @version      1.4
 // @description  Omni loader — self-checks version, then fetches the framework and runs it.
 // @match        https://gartic.io/*
 // @grant        GM_xmlhttpRequest
@@ -17,10 +17,7 @@
     if (w.__omniVoyager) return;
     w.__omniVoyager = true;
 
-    const SELF_URLS = [
-        'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/voyager/voyager.user.js',
-        'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/voyager/voyager.user.js'
-    ];
+    const SELF_URL = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/voyager/voyager.user.js';
 
     function ownVersion() {
         try {
@@ -28,9 +25,9 @@
             return (typeof v === 'string' && v) ? v : null;
         } catch (e) { return null; }
     }
-    const INSTALL_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/voyager/voyager.user.js';
-    const FRAMEWORK_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/omni/omni.js';
-    const FRAMEWORK_FALLBACK = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/omni/omni.js';
+    const INSTALL_URL = SELF_URL;
+    const FRAMEWORK_URL = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/omni/omni.js';
+    const FRAMEWORK_FALLBACK = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/omni/omni.js';
     const FRAMEWORK_MUST_CONTAIN = 'omniFramework';
 
     function fetchText(url, cb, eb) {
@@ -115,9 +112,7 @@
     const mine = ownVersion();
     console.log('[omni] loader v' + mine + ' — self-check first');
     if (mine === null) { loadFramework(); return; }
-    // Check ALL sources, take the max version — one stale cache can't hide an update.
-    const found = [];
-    let pending = SELF_URLS.length;
+    // Single source (raw): ~5min cache, never throttled, guaranteed fresh.
     function cmp(a, b) {
         const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
         for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
@@ -126,18 +121,15 @@
         }
         return 0;
     }
-    function finish() {
-        if (--pending > 0) return;
-        let newest = null;
-        found.forEach(v => { if (v && (!newest || cmp(v, newest) > 0)) newest = v; });
-        if (newest && cmp(newest, mine) > 0) {
-            console.error('[omni] outdated: local v' + mine + ' vs remote v' + newest);
-            showBlocker(newest);
-            return;
-        }
-        loadFramework();
-    }
-    SELF_URLS.forEach(u => fetchText(u,
-        code => { const v = parseVersion(code); if (v) found.push(v); finish(); },
-        () => { finish(); }));
+    fetchText(SELF_URL,
+        code => {
+            const remoteVer = parseVersion(code);
+            if (remoteVer && cmp(remoteVer, mine) > 0) {
+                console.error('[omni] outdated: local v' + mine + ' vs remote v' + remoteVer);
+                showBlocker(remoteVer);
+                return;
+            }
+            loadFramework();
+        },
+        () => { loadFramework(); });
 })();
