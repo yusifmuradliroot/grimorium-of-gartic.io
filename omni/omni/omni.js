@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '1.9';
+    const VERSION = '2.0';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -265,6 +265,12 @@
         if (raw && typeof raw.then === 'function') raw.then(go);
         else go(raw);
     }
+    function storedDependents(id) {
+        const raw = gGet(STORE_PLUGINS, []);
+        if (raw && typeof raw.then === 'function') return [];
+        if (!Array.isArray(raw)) return [];
+        return raw.filter(p => p && p.id !== id && (p.deps || []).indexOf(id) > -1).map(p => p.id);
+    }
     function loadPlugin(id, file, mustContain, cb) {
         const url = PLUGIN_BASE + file;
         fetchText(url,
@@ -362,6 +368,49 @@
         });
     }
     function wire(list, overlay) {
+        const manual = new Set();
+        function rows() {
+            return Array.prototype.slice.call(list.querySelectorAll('label')).map(row => {
+                const cb = row.querySelector('input');
+                let deps = [];
+                try { deps = JSON.parse(row.dataset.deps || '[]'); } catch (e) {}
+                return { row: row, cb: cb, id: cb.value, deps: deps };
+            });
+        }
+        function refreshFaded() {
+            const all = rows();
+            const byId = {};
+            all.forEach(r => { byId[r.id] = r; });
+            const needed = {};
+            function mark(id) {
+                const r = byId[id];
+                if (!r) return;
+                r.deps.forEach(d => { if (!needed[d]) { needed[d] = true; mark(d); } });
+            }
+            manual.forEach(id => mark(id));
+            all.forEach(r => {
+                if (manual.has(r.id)) {
+                    r.cb.checked = true;
+                    r.cb.disabled = false;
+                    r.row.style.opacity = '1';
+                } else if (needed[r.id]) {
+                    r.cb.checked = true;
+                    r.cb.disabled = true;
+                    r.row.style.opacity = '.55';
+                } else {
+                    r.cb.checked = false;
+                    r.cb.disabled = false;
+                    r.row.style.opacity = '1';
+                }
+            });
+        }
+        list.addEventListener('change', e => {
+            const cb = e.target.closest ? e.target.closest('input') : null;
+            if (!cb || cb.disabled) return;
+            if (cb.checked) manual.add(cb.value);
+            else manual.delete(cb.value);
+            refreshFaded();
+        });
         overlay.querySelector('#omni-skip').addEventListener('click', () => overlay.remove());
         overlay.querySelector('#omni-install').addEventListener('click', () => {
             const sel = [];
@@ -479,6 +528,11 @@
             document.body.appendChild(btn);
         });
     }
+    function refreshSettingsList() {
+        const old = document.getElementById('omni-settings');
+        if (old) old.remove();
+        toggleSettings();
+    }
     function toggleSettings() {
         const old = document.getElementById('omni-settings');
         if (old) { old.remove(); return; }
@@ -521,7 +575,18 @@
             const dis = document.createElement('button');
             dis.textContent = 'Disable';
             dis.style.cssText = 'padding:6px 10px !important;border:none !important;background:#c0392b !important;color:#fff !important;border-radius:6px !important;font:bold 12px Arial !important;cursor:pointer !important;';
-            dis.addEventListener('click', () => { unloadPlugin(id); delete loadedMeta[id]; disableStored(id); row.remove(); });
+            dis.addEventListener('click', () => {
+                const needers = storedDependents(id);
+                if (needers.length) {
+                    const names = needers.join(', ');
+                    const ok = confirm('"' + names + '" needs "' + id + '". Disable "' + names + '" too?');
+                    if (!ok) return;
+                    needers.forEach(nid => { unloadPlugin(nid); delete loadedMeta[nid]; disableStored(nid); });
+                    refreshSettingsList();
+                    return;
+                }
+                unloadPlugin(id); delete loadedMeta[id]; disableStored(id); row.remove();
+            });
             const re = document.createElement('button');
             re.textContent = 'Reload';
             re.style.cssText = 'padding:6px 10px !important;border:none !important;background:#0f1419 !important;color:#fff !important;border-radius:6px !important;font:bold 12px Arial !important;cursor:pointer !important;';
