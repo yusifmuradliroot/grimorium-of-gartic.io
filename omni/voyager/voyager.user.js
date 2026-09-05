@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      1.1
+// @version      1.2
 // @description  Omni loader — self-checks version, then fetches the framework and runs it.
 // @match        https://gartic.io/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
+// @grant        GM_info
 // @grant        unsafeWindow
 // @run-at       document-start
 // ==/UserScript==
@@ -16,8 +17,14 @@
     if (w.__omniVoyager) return;
     w.__omniVoyager = true;
 
-    const VERSION = '1.1';
     const SELF_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/voyager/voyager.user.js';
+
+    function ownVersion() {
+        try {
+            const v = GM_info && GM_info.script && GM_info.script.version;
+            return (typeof v === 'string' && v) ? v : null;
+        } catch (e) { return null; }
+    }
     const INSTALL_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/voyager/voyager.user.js';
     const FRAMEWORK_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/omni/omni.js';
     const FRAMEWORK_FALLBACK = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/omni/omni.js';
@@ -59,7 +66,7 @@
             const body = document.createElement('div');
             body.style.cssText = 'padding:20px !important;display:flex !important;flex-direction:column !important;gap:14px !important;font:13px/1.5 Arial !important;';
             const msg = document.createElement('div');
-            msg.textContent = 'omni/voyager is outdated (yours: v' + VERSION + ', latest: v' + remoteVer + '). Please update manually.';
+            msg.textContent = 'omni/voyager is outdated (yours: v' + ownVersion() + ', latest: v' + remoteVer + '). Please update manually.';
             const btn = document.createElement('a');
             btn.href = INSTALL_URL;
             btn.textContent = 'Update voyager.user.js';
@@ -102,12 +109,14 @@
             err => { console.error('[omni] framework unreachable', err); });
     }
 
-    console.log('[omni] loader v' + VERSION + ' — self-check first');
+    const mine = ownVersion();
+    console.log('[omni] loader v' + mine + ' — self-check first');
+    if (mine === null) { loadFramework(); return; }
     fetchText(SELF_URL,
         code => {
             const remoteVer = parseVersion(code);
-            if (remoteVer && remoteVer !== VERSION) {
-                console.error('[omni] outdated: local v' + VERSION + ' vs remote v' + remoteVer);
+            if (remoteVer && remoteVer !== mine) {
+                console.error('[omni] outdated: local v' + mine + ' vs remote v' + remoteVer);
                 showBlocker(remoteVer);
                 return;
             }
