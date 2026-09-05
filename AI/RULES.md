@@ -10,3 +10,5 @@
 4. **No code without approval.** Discuss the plan first, write code only after user says so.
 5. **Language.** User communication in Turkish. Code comments in English. Keep both short.
 6. **Verify.** Run builds / sanity checks after changes whenever possible. Report commit hashes after push.
+7. **Target environment: Firefox-based browsers + Violentmonkey.** All code MUST work there.
+   No Chrome-only APIs. Check every `GM_*` / `unsafeWindow` usage against Violentmonkey behavior.

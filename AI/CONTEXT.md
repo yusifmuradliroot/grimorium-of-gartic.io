@@ -1,5 +1,8 @@
 # CONTEXT — infrastructure map
 
+## Environment
+Firefox-based browsers + Violentmonkey. Everything is developed and tested against this stack.
+
 ## Repos
 - `abyss-of-gartic.io` (PRIVATE): raw source, protection layers DISABLED. All development happens here.
 - `grimorium-of-gartic.io` (PUBLIC, this repo): protected output = abyss + protection (legal + code). branch `Aetherial`.
