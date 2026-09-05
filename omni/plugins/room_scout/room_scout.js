@@ -22,7 +22,7 @@
     w.__roomScout = true;
 
     const LIST_URL = 'https://gartic.io/req/list';
-    const TS_SITEKEY = '6LfXVygpAAAAAF8quKwATHsm0Acex4sPUBcI2vXe';
+    const TS_SITEKEY = '0x4AAAAAABBPKaIbNwnPEfSo';
     const TS_API = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     let selLang = '', selSubj = '';
     let langEl = null, subjEl = null;
@@ -111,21 +111,21 @@
             const box = document.createElement('div');
             box.style.cssText = 'position:fixed !important;left:8px !important;bottom:8px !important;width:65px !important;height:65px !important;overflow:hidden !important;opacity:.01 !important;z-index:1 !important;';
             document.body.appendChild(box);
-            let wid = null, finished = false;
-            const to = setTimeout(() => { if (!finished) { finished = true; cleanup(); cb(null, 'ts timeout'); } }, 25000);
+            let wid = null, finished = false, tries = 0;
+            const to = setTimeout(() => { if (!finished) { finished = true; cleanup(); cb(null, 'ts timeout'); } }, 35000);
             function cleanup() { try { if (wid !== null && wid !== undefined) w.turnstile.remove(wid); } catch (e) {} try { box.remove(); } catch (e) {} }
             function fail(stage) { if (!finished) { finished = true; clearTimeout(to); cleanup(); cb(null, stage); } }
-            let rendered = false;
             try {
                 wid = w.turnstile.render(box, {
                     sitekey: TS_SITEKEY,
+                    action: 'join',
+                    appearance: 'interaction-only',
                     callback: tk => { if (!finished) { finished = true; clearTimeout(to); cleanup(); cb(tk); } },
-                    'error-callback': () => fail('ts widget error'),
+                    'error-callback': () => { tries++; if (tries < 3) { try { w.turnstile.execute(wid); } catch (e) {} } else fail('ts widget error'); },
                     'expired-callback': () => fail('ts expired')
                 });
-                rendered = (wid !== null && wid !== undefined);
             } catch (e) { fail('ts render throw'); return; }
-            if (!rendered) { fail('ts render empty'); return; }
+            if (wid === null || wid === undefined) { fail('ts render empty'); return; }
             try { w.turnstile.execute(wid); }
             catch (e) { fail('ts execute throw'); }
         });
