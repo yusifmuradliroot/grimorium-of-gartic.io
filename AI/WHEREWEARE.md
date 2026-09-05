@@ -7,7 +7,8 @@ Gartic.io scripting platform (SDK vision). Description: "Scripting platform for 
 ## Done
 - Repo cleaned, branch `main` deleted, `aetherial` is default.
 - Settings: description, topics (gartic-io, userscript, tampermonkey, violentmonkey, firefox), custom LICENSE, issues open, no branch protection.
-- Skeleton: `omni/{voyager,orbit,plugins}`, `docs/`, plus README, .gitignore, CHANGELOG.
+- Skeleton: `omni/{voyager,omni,plugins}`, `docs/`, plus README, .gitignore, CHANGELOG.
+  ("orbit" retired — framework is `omni`, ships as `omni.fs`; voyager stays the only `.js`.)
 - Docs: `VERSIONING.md` (plugin single version, core separate, omni derived `v+o`), `TERMS.md` (user agreement).
 - Plugin system: `index.json` (folder names) + per-plugin folder (`plugin.json` + entry js). Reference `example/` template exists. Real pixel_drawer NOT public yet.
 - Bug report template in `.github/ISSUE_TEMPLATE/`.
@@ -20,7 +21,7 @@ Gartic.io scripting platform (SDK vision). Description: "Scripting platform for 
 - Device: mobile, Firefox-based. Console: NONE → visual-feedback diagnosis only.
 
 ## Done (abyss side)
-- Abyss reorganized: `omni/{voyager,orbit,plugins,dist}` raw layout mirroring grimorium,
+- Abyss reorganized: `omni/{voyager,omni,plugins,dist}` raw layout mirroring grimorium,
   dead files deleted (2.0M → 0.9M), own AGENTS.md + AI/ (full annotation allowed). Push `2c160f0`.
 - Two-repo sync active: `tools/check.py` on both sides, rule 14 in both RULES.md.
 
@@ -28,7 +29,7 @@ Gartic.io scripting platform (SDK vision). Description: "Scripting platform for 
 - (next AI: fill here)
 
 ## Next
-- Fresh core code in `abyss` (raw voyager + orbit, single "Omni" branding in GUI).
+- Fresh core code in `abyss` (raw voyager + omni framework, "Omni" branding everywhere).
 - Protection build step abyss → grimorium (verify, mustContain, license headers).
 - First real plugin publication.
 

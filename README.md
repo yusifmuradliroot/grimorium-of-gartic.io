@@ -7,7 +7,7 @@ Scripting platform for Gartic.io — Omni core and plugins.
 ```
 omni/
   voyager/   → injector
-  orbit/     → framework (Hub + API + GUI + Loader)
+  omni/       → framework, ex-orbit (Hub + API + GUI + Loader; ships as omni.fs)
   plugins/   → plugins, each in its own folder (+ manifest.json)
 docs/        → setup, architecture, plugin guide
 ```
