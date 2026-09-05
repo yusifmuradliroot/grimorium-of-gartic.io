@@ -16,8 +16,8 @@
     if (w.__omniVoyager) return;
     w.__omniVoyager = true;
 
-    const VERSION = '1.0';
-    const SELF_URL = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/voyager/voyager.user.js';
+    const VERSION = '1.1';
+    const SELF_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/voyager/voyager.user.js';
     const INSTALL_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/voyager/voyager.user.js';
     const FRAMEWORK_URL = 'https://cdn.jsdelivr.net/gh/yusifmuradliroot/grimorium-of-gartic.io@aetherial/omni/omni/omni.js';
     const FRAMEWORK_FALLBACK = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/omni/omni.js';
