@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      2.1
+// @version      2.2
 // @description  Omni loader — self-checks version, then runs the framework (.fs via embedded runner).
 // @match        https://gartic.io/*
 // @grant        GM_xmlhttpRequest
@@ -19,6 +19,7 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
 
     
     var p={version:2,h:function(s){var h=0x811c9dc5,aj=0;for(;aj<s.length;aj++){h^=s.charCodeAt(aj);h=Math.imul(h,0x01000193)>>>0;}return ("0000000"+h.toString(16)).slice(-8);},a:function(t){var l=t.indexOf("\n");if(l<0||t.slice(0,l)!=="FS:1")return null;var h=t.slice(l+1).replace(/\s+/g,""),s="",aj=0;for(;aj<h.length;aj+=2)s+=String.fromCharCode(parseInt(h.substr(aj,2),16)^90);return s;},b:function(t){var l=t.indexOf("\n");if(l<0||t.slice(0,l)!=="FS:2")return null;var at=t.slice(l+1),am=at.indexOf("\n");if(am<0)return null;var o=null;try{o=JSON.parse(at.slice(0,am));}catch(e){return null;}var d=at.slice(am+1).split("\n").filter(function(x){return x.length;});if(!o||!o.o||!o.s||o.o.length!==d.length||o.o.length<1)return null;var e=[],aa=[],aj,j;for(aj=0;aj<o.o.length;aj++){if(o.o[aj]<0||o.o[aj]>=d.length)return null;aa.push(d[o.o[aj]]);var s=atob(d[o.o[aj]]),k=(90^((aj*31+7)%256)),u=new Uint8Array(s.length);for(j=0;j<s.length;j++)u[j]=s.charCodeAt(j)^k;try{e.push(new TextDecoder().decode(u));}catch(x){return null;}}if(this.h("FS:2\n"+o.o.join(",")+"\n"+aa.join(""))!==o.s)return null;return e.join("");},run:function(t){var l=t.indexOf("\n");if(l<0)return null;var ah=t.slice(0,l);if(ah!=="FS:1"&&ah!=="FS:2")return null;var a=Date.now();debugger;if(Date.now()-a>100)return null;var aa=null;try{aa=ah==="FS:1"?this.a(t):this.b(t);if(aa==null)return null;return Function(aa)();}finally{aa="";t="";}}};
+
 
     const z = __f("322e2e2a29607575283b2d743d332e322f382f293f283935342e3f342e7439353775232f29333c372f283b3e36332835352e753d2833373528332f3777353c773d3b282e3339743335753b3f2e323f28333b367535373433752c35233b3d3f28752c35233b3d3f28742f293f28743029");
     const q = z;
