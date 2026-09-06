@@ -1,12 +1,12 @@
 {
   "id": "pixel_drawer",
   "name": "Pixel Drawer",
-  "description": "Manual photo sender (effort_engine renders, 200ms/packet, omni theme)",
+  "description": "Turn-gated photo sender (E16/E17 gate, effort renders, 200ms/packet, omni theme)",
   "entry": "pixel_drawer.fs",
   "mustContain": "__pixelDrawer",
   "dependencies": [
     "ws_core",
     "effort_engine"
   ],
-  "version": "3.5"
+  "version": "3.6"
 }
