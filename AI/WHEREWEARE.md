@@ -14,7 +14,7 @@ this repo receives built output. Export is MANUAL.
   validates .js entries and signed `.fs` entries).
 - Production chain LIVE: voyager 2.3 (forged, embedded runner, self-check + blocker)
   boots `omni.fs` (FS:2 signed, forge-built). Only `.js` file in the whole chain.
-- Current public set (ROLLED BACK 2026-09-06): voyager 2.3 + omni.fs 4.0 +
+- Current public set (ROLLED BACK 2026-09-06): voyager 3.1 + omni.fs 5.0 +
   pixel_drawer.fs 2.3 + ws_core.fs 1.2. Reason: persistent ws_core exec failure
   in newer line (cause under investigation, see abyss ai-reports).
   New line stays in abyss lab. Silence kept (nolog + banner).
