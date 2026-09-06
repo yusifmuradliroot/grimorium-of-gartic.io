@@ -4,5 +4,5 @@
   "description": "Room browser + background player fetch (self-contained)",
   "entry": "room_scout.fs",
   "mustContain": "__roomScout",
-  "version": "3.2"
+  "version": "3.3"
 }
