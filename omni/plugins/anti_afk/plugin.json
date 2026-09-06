@@ -1,9 +1,9 @@
 {
   "id": "anti_afk",
   "name": "Anti AFK",
-  "description": "Heartbeat + scribble turn guard + counter-vote (room.js verified)",
+  "description": "Constant real activity guard (heartbeat + scribble) + counter-vote",
   "entry": "anti_afk.js",
   "mustContain": "__antiAfk",
   "dependencies": ["ws_core"],
-  "version": "4.0"
+  "version": "5.0"
 }
