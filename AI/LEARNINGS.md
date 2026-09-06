@@ -51,3 +51,11 @@
   Recovery ping if 32 arrives anyway. No scribble/vote extras (5.0 Kawaii-mirror retired).
 - `.fs` builds lose the `__omniWsHub` marker comment (strip pass) — expected, matches
   pixel_drawer/ws_core precedent. mustContain uses a code identifier (`__antiAfk`), never a comment.
+
+## 2026-09-06 — anti_afk 6.0 FAILED live, 7.0 fixes it
+- 6.0 sent only wire `42[42,"CODE"]`. Popup still appeared → kick. Root cause: the
+  popup is CLIENT-side (`_timerAtivo` vs local `_ativo`); wire packets never reset it.
+  The working standalone grabs the live game object (React fiber) and calls `active()`.
+- 7.0 does the same from inside the plugin (DOM via unsafeWindow, fiber walk capped at
+  400 nodes): `game._ativo = now + game.active()` every 30s; wire ping only as fallback
+  until the object is found. Lesson: simulate the game's METHOD, not just its packets.
