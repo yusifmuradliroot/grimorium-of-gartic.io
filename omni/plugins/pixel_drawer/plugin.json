@@ -2,8 +2,10 @@
   "id": "pixel_drawer",
   "name": "Pixel Drawer",
   "description": "Photo to 8x8, 2-2-2 bit color, 1 packet per 250ms",
-  "entry": "pixel_drawer.js",
+  "entry": "pixel_drawer.fs",
   "mustContain": "__pixelDrawer",
-  "dependencies": ["ws_core"],
+  "dependencies": [
+    "ws_core"
+  ],
   "version": "2.3"
 }

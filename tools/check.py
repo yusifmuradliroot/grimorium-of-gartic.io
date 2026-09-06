@@ -2,6 +2,7 @@
 """Repo integrity checker. One run, clear verdict, no loops.
 Usage: python3 tools/check.py
 Exit 0 = PASS, 1 = FAIL. Fix what it reports (max 2 rounds), then ask the user.
+Supports .js entries (mustContain) and .fs entries (tag + manifest + signature).
 """
 import json
 import sys
@@ -22,16 +23,51 @@ def warn(msg):
     warns.append(msg)
 
 
+def _fnv1a(data: bytes) -> int:
+    h = 0x811C9DC5
+    for b in data:
+        h ^= b
+        h = (h * 0x01000193) & 0xFFFFFFFF
+    return h
+
+
+def check_packed(n, entry):
+    # .fs entries: tag + manifest + signature verified (markers hide inside).
+    try:
+        lines = entry.read_text(errors="replace").split("\n")
+    except Exception as e:
+        fail(f"{n}: cannot read {entry.name}: {e}")
+        return
+    if not lines or lines[0] != "FS:2":
+        fail(f"{n}: {entry.name} missing FS:2 tag")
+        return
+    try:
+        m = json.loads(lines[1])
+        blobs = [b for b in lines[2:] if b]
+        if sorted(m.get("o", [])) != list(range(len(blobs))):
+            fail(f"{n}: {entry.name} bad manifest order")
+            return
+        ordered = [blobs[m["o"].index(e)] for e in range(len(blobs))]
+        sig = "%08x" % _fnv1a(("FS:2\n" + ",".join(map(str, m["o"])) + "\n" + "".join(ordered)).encode())
+        if sig != m.get("s"):
+            fail(f"{n}: {entry.name} signature mismatch")
+    except Exception as e:
+        fail(f"{n}: {entry.name} manifest invalid: {e}")
+
+
 def main():
     index_file = PLUGINS / "index.json"
     if not index_file.is_file():
-        return fail("missing omni/plugins/index.json")
+        fail("missing omni/plugins/index.json")
+        return 1
     try:
         names = json.loads(index_file.read_text())
     except Exception as e:
-        return fail(f"index.json invalid JSON: {e}")
+        fail(f"index.json invalid JSON: {e}")
+        return 1
     if not isinstance(names, list):
-        return fail("index.json must be a JSON list of folder names")
+        fail("index.json must be a JSON list of folder names")
+        return 1
 
     on_disk = sorted(p.name for p in PLUGINS.iterdir() if p.is_dir())
     for n in names:
@@ -56,6 +92,8 @@ def main():
         entry = d / str(meta.get("entry", ""))
         if not entry.is_file():
             fail(f"{n}: entry file '{meta.get('entry')}' missing")
+        elif entry.suffix == ".fs":
+            check_packed(n, entry)
         else:
             code = entry.read_text(errors="replace")
             mc = str(meta.get("mustContain", ""))
