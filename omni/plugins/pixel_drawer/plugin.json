@@ -1,11 +1,12 @@
 {
   "id": "pixel_drawer",
   "name": "Pixel Drawer",
-  "description": "Photo to 8x8, 2-2-2 bit color, 1 packet per 250ms",
+  "description": "Turn-gated photo sender (effort_engine renders, 200ms/packet, omni theme)",
   "entry": "pixel_drawer.fs",
   "mustContain": "__pixelDrawer",
   "dependencies": [
-    "ws_core"
+    "ws_core",
+    "effort_engine"
   ],
-  "version": "2.3"
+  "version": "3.0"
 }
