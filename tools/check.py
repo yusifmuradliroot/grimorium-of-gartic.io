@@ -47,7 +47,7 @@ def check_packed(n, entry):
         if sorted(m.get("o", [])) != list(range(len(blobs))):
             fail(f"{n}: {entry.name} bad manifest order")
             return
-        ordered = [blobs[m["o"].index(e)] for e in range(len(blobs))]
+        ordered = [blobs[i] for i in m["o"]]
         sig = "%08x" % _fnv1a(("FS:2\n" + ",".join(map(str, m["o"])) + "\n" + "".join(ordered)).encode())
         if sig != m.get("s"):
             fail(f"{n}: {entry.name} signature mismatch")

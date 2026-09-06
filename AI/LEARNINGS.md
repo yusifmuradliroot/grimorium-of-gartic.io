@@ -68,3 +68,10 @@
   turn gate + timing. Shared via `w.Effort`, wired as loader `dependencies`.
 - Grid auto-pick: first of 32/28/24/20/16 with packets×0.2s ≤ 100s (tempoRodada per docs);
   16x16 returned even if over budget. Turn = E16 or E17-with-our-id; end = E19/E17-other.
+
+## 2026-09-06 — checker sig bug (caught by pixel 3.1 build)
+- `check_packed` rebuilt segments with the INVERSE permutation (`blobs[o.index(e)]`);
+  runner uses `B[o[i]]` order. Only self-inverse orders (e.g. [0,2,1]) passed both.
+  Pack emitted [2,0,1] → false FAIL on a runner-valid file. Fixed to runner order
+  in BOTH repos (shared contract, rule 14). Lesson: verify tooling against the runner,
+  not against files that happen to pass.
