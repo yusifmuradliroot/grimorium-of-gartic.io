@@ -1,11 +1,11 @@
 {
   "id": "anti_afk",
   "name": "Anti AFK",
-  "description": "Game-native activity ping every 30s (popup never fires) + recovery on packet 32",
+  "description": "Calls game.active() every 30s via live object (resets idle counter) + wire fallback",
   "entry": "anti_afk.fs",
   "mustContain": "__antiAfk",
   "dependencies": [
     "ws_core"
   ],
-  "version": "6.0"
+  "version": "7.0"
 }
