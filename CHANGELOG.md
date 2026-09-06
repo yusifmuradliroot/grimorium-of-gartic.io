@@ -7,6 +7,7 @@ plugins carry their own version.
 ## [Unreleased]
 - voyager 2.4: fetch-only download (GM_xhr grants dropped, header minimal),
   FS:2-only gate (legacy unsigned FS:1 refused at the door).
+- voyager 2.5: carries forge runner v3 (FS:1 reader removed; last reader in forge archive).
 
 ## Releases
 - omni 4.0 + voyager 2.x: embedded forgescript runner, `.fs` era (FS:2 signed).
