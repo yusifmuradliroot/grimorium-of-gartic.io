@@ -12,12 +12,12 @@ this repo receives built output. Export is MANUAL.
   `TERMS.md` (user agreement, English).
 - AI infra: AGENTS.md + AI/ (17 rules), bug template, link checker (`tools/check.py`
   validates .js entries and signed `.fs` entries).
-- Production chain LIVE: voyager 2.3 (forged, embedded runner, self-check + blocker)
-  boots `omni.fs` (FS:2 signed, forge-built). Only `.js` file in the whole chain.
-- Current public set (ROLLED BACK 2026-09-06): voyager 3.1 + omni.fs 5.0 +
-  pixel_drawer.fs 2.3 + ws_core.fs 1.2. Reason: persistent ws_core exec failure
-  in newer line (cause under investigation, see abyss ai-reports).
-  New line stays in abyss lab. Silence kept (nolog + banner).
+- Production chain LIVE: voyager 3.1 (forged, embedded runner, internal version check)
+  boots `omni.fs` 5.0 (FS:2 signed, forge-built, own-runner fallback). Only `.js` in the chain.
+- Current public set: voyager 3.1 + omni.fs 5.0 (clean recode) +
+  pixel_drawer.fs 2.4 + ws_core.fs 1.2 + example.fs 1.0.
+  (Rollback era over: exec root cause was the renamed runner, fixed forge 2.7.1.
+  New line still in abyss lab. Silence kept: nolog + banner.)
   (anti_afk PULLED from public — both 6.0 and 7.0 failed live; raw stays in abyss.)
   (Older public plugins were removed; abyss keeps all sources.)
 
