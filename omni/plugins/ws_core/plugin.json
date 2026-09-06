@@ -4,5 +4,5 @@
   "description": "Owns the wire (WS + polling tap, raw, zero JSON) + ws service",
   "entry": "ws_core.fs",
   "mustContain": "__omniWsCore",
-  "version": "2.4"
+  "version": "2.5"
 }
