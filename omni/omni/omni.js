@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '2.5';
+    const VERSION = '2.6';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -490,19 +490,22 @@
         const raw = gGet(STORE_PLUGINS, []);
         const go = sel => {
             const arr = Array.isArray(sel) ? sel.filter(p => p && typeof p !== 'string') : [];
-            const needMeta = arr.filter(p => !Array.isArray(p.deps));
-            if (!needMeta.length) { loadOrdered(arr); return; }
-            let pending = needMeta.length;
-            needMeta.forEach(p => {
+            if (!arr.length) return;
+            // Always refresh stored meta (file/must/deps/ver) — never boot stale.
+            let pending = arr.length;
+            arr.forEach(p => {
                 fetchText(PLUGIN_BASE + p.id + '/plugin.json',
                     meta => {
                         try {
                             const info = JSON.parse(meta);
+                            p.file = p.id + '/' + (info.entry || (p.id + '.js'));
+                            p.must = info.mustContain || p.id;
                             p.deps = info.dependencies || [];
-                        } catch (e) { p.deps = []; }
-                        if (--pending === 0) loadOrdered(arr);
+                            p.ver = info.version || '';
+                        } catch (e) {}
+                        if (--pending === 0) { gSet(STORE_PLUGINS, arr); loadOrdered(arr); }
                     },
-                    () => { p.deps = []; if (--pending === 0) loadOrdered(arr); });
+                    () => { if (--pending === 0) { gSet(STORE_PLUGINS, arr); loadOrdered(arr); } });
             });
         };
         if (raw && typeof raw.then === 'function') raw.then(go);
