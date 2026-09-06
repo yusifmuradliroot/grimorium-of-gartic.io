@@ -88,15 +88,15 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     function ae(code, src) {
         
         if (typeof code !== 'string' || code.indexOf('FS:2\n') !== 0) {
-            
+            ;
             return false;
         }
         try {
             n.run(code);
-            
+            ;
             return true;
         } catch (e) {
-            
+            ;
             return false;
         }
     }
@@ -108,7 +108,7 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     function aj() {
         af(f,
             code => { ae(code, f); },
-            ad => {  });
+            ad => { ; });
     }
     function ac(z, b) {
         const aq = String(z).split('.').map(Number), pb = String(b).split('.').map(Number);
@@ -120,9 +120,9 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     }
 
     const am = ap();
-    
+    ;
     if (am === null) {
-        
+        ;
         av('error', __f("352d347a2c3f28293335347a2f34283f3b3e3b38363f"));
         return;
     }
@@ -130,19 +130,19 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
         code => {
             const at = ar(code);
             if (!at) {
-                
+                ;
                 av('error', __f("283f37352e3f7a2c3f28293335347a2f342a3b28293f3b38363f"));
                 return;
             }
             if (ac(at, am) > 0) {
-                
+                ;
                 av('outdated', at);
                 return;
             }
             ak();
         },
         ad => {
-            
+            ;
             av('error', __f("2c3f28293335347a39323f39317a2f34283f3b39323b38363f"));
         });
 })();
