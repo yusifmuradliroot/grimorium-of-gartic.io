@@ -1,0 +1,8 @@
+{
+  "id": "effort_engine",
+  "name": "Effort Engine",
+  "description": "Render core: flood bg + merged rects + aspect grids 16-48, 3-3-3 bit",
+  "entry": "effort_engine.fs",
+  "mustContain": "__effortEngine",
+  "version": "2.1"
+}
