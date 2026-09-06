@@ -1,11 +1,9 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      3.2
+// @version      3.3
 // @description  Omni loader — verifies itself by content hash, then runs the framework (.fs via embedded runner).
 // @match        https://gartic.io/*
-// @connect      raw.githubusercontent.com
-// @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
 // @run-at       document-start
 // ==/UserScript==
@@ -19,7 +17,7 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     
     
     
-    try { ar.__voyagerHash = 'c9142e49'; } catch (e) {}
+    try { ar.__voyagerHash = '719071f8'; } catch (e) {}
 
     
     var ForgeScript={version:4,h:function(s){var h=0x811c9dc5,af=0;for(;af<s.length;af++){h^=s.charCodeAt(af);h=Math.imul(h,0x01000193)>>>0;}return ("0000000"+h.toString(16)).slice(-8);},b:function(t){var l=t.indexOf("\n");if(l<0||t.slice(0,l)!=="FS:2")return null;var al=t.slice(l+1),m=al.indexOf("\n");if(m<0)return null;var o=null;try{o=JSON.parse(al.slice(0,m));}catch(e){return null;}var d=al.slice(m+1).split("\n").filter(function(x){return x.length;});if(!o||!o.o||!o.s||o.o.length!==d.length||o.o.length<1)return null;var c=[],af,j,q=[],t=0;for(af=0;af<o.o.length;af++){if(o.o[af]<0||o.o[af]>=d.length)return null;c.push(d[o.o[af]]);var s=atob(d[o.o[af]]),k=(90^((af*31+7)%256)),u=new Uint8Array(s.length);for(j=0;j<s.length;j++)u[j]=s.charCodeAt(j)^k;q.push(u);t+=u.length;}if(this.h("FS:2\n"+o.o.join(",")+"\n"+c.join(""))!==o.s)return null;var a=new Uint8Array(t),p=0;for(af=0;af<q.length;af++){a.set(q[af],p);p+=q[af].length;}try{return new TextDecoder().decode(a);}catch(x){return null;}},run:function(t){var l=t.indexOf("\n");if(l<0||t.slice(0,l)!=="FS:2")return null;var a=Date.now();debugger;if(Date.now()-a>100)return null;var c=null;try{c=this.b(t);if(c==null)return null;return Function(c)();}finally{c="";t="";}}};
@@ -33,12 +31,6 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     function ab(url, cb, eb) {
         const ad = url + (url.indexOf('?') === -1 ? '?_=' + Date.now() : '&_=' + Date.now());
         try {
-            if (typeof GM_xmlhttpRequest === 'function') {
-                GM_xmlhttpRequest({ method: 'GET', url: ad, timeout: 15000,
-                    onload: al => (al.status >= 200 && al.status < 400 && al.responseText) ? cb(al.responseText) : eb && eb('status ' + al.status),
-                    onerror: () => eb && eb('onerror'), ontimeout: () => eb && eb('timeout') });
-                return;
-            }
             fetch(ad, { cache: 'no-store' }).then(al => {
                 if (!al.ok) throw new Error('fetch ' + al.status);
                 return al.text();
