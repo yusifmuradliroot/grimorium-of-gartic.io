@@ -140,27 +140,51 @@
             return { WS: WS, drop: () => { try { fr.remove(); } catch (e) {} } };
         } catch (e) { return null; }
     }
+    function getJSON(url, cb) {
+        try {
+            if (typeof GM_xmlhttpRequest === 'function') {
+                GM_xmlhttpRequest({ method: 'GET', url: url, timeout: 10000,
+                    onload: r => {
+                        try { cb(JSON.parse(r.responseText)); } catch (e) { cb(null); }
+                    },
+                    onerror: () => cb(null), ontimeout: () => cb(null) });
+            } else {
+                fetch(url, { cache: 'no-store' }).then(r => r.text()).then(t => {
+                    try { cb(JSON.parse(t)); } catch (e) { cb(t); }
+                }).catch(() => cb(null));
+            }
+        } catch (e) { cb(null); }
+    }
     function fetchPlayers(room, cb) {
-        // room: {id, code}. Viewer join on a throwaway socket, read E5, close.
+        // room: {id, code}. Token → server discovery → viewer join → E5 → close.
         solveToken((tok, stage) => {
             if (!tok) { cb(null, stage || 'captcha failed'); return; }
-            const cs = cleanSocket();
-            if (!cs) { cb(null, 'socket blocked'); return; }
-            let sock = null, done = false;
-            const to = setTimeout(() => finish(null, 'timeout'), 20000);
-            function finish(players, err) {
-                if (done) return;
-                done = true;
-                clearTimeout(to);
-                try { if (sock) sock.close(); } catch (e) {}
-                try { cs.drop(); } catch (e) {}
-                cb(players, err);
-            }
-            try {
-                sock = new cs.WS('wss://gartic.io/socket.io/?EIO=3&transport=websocket');
-            } catch (e) { finish(null, 'connect failed'); return; }
-            sock.onopen = () => { try { sock.send('40'); } catch (e) {} };
-            sock.onerror = () => finish(null, 'socket error');
+            getJSON('https://gartic.io/serverViewer?v3=1&room=' + encodeURIComponent(room.code) + '&_=' + Date.now(), srv => {
+                if (typeof srv !== 'string' || !srv || srv.charAt(0) === 'x') {
+                    console.log('[room_scout] server reply: ' + JSON.stringify(srv).slice(0, 100)); // TEMP DEBUG
+                    cb(null, 'no server');
+                    return;
+                }
+                const host = srv.replace('localhost', location.hostname).replace(/^http/, 'ws');
+                console.log('[room_scout] dialing: ' + host + '/socket.io/'); // TEMP DEBUG
+                const cs = cleanSocket();
+                if (!cs) { cb(null, 'socket blocked'); return; }
+                let sock = null, done = false;
+                const to = setTimeout(() => finish(null, 'timeout'), 20000);
+                function finish(players, err) {
+                    if (done) return;
+                    done = true;
+                    clearTimeout(to);
+                    try { if (sock) sock.close(); } catch (e) {}
+                    try { cs.drop(); } catch (e) {}
+                    cb(players, err);
+                }
+                try {
+                    sock = new cs.WS(host + '/socket.io/?EIO=3&transport=websocket');
+                } catch (e) { finish(null, 'connect failed'); return; }
+                sock.onopen = () => { try { sock.send('40'); } catch (e) {} };
+                sock.onerror = ev => { console.log('[room_scout] sock onerror'); finish(null, 'socket error'); }; // TEMP DEBUG
+                sock.onclose = ev => { try { console.log('[room_scout] sock closed code=' + (ev && ev.code)); } catch (e) {} }; // TEMP DEBUG
             sock.onmessage = ev => {
                 let msg = ev.data;
                 if (typeof msg !== 'string') { try { msg = String(msg); } catch (e) { return; } }
@@ -179,6 +203,7 @@
                     else finish(null, 'parse failed');
                 }
             };
+            });
         });
     }
     function row(room) {
