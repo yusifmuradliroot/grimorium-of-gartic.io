@@ -1,12 +1,11 @@
-// anti_afk — game-truth activity.
-// From room.js analysis:
-// - Server verdict "inactive" arrives as socket event 32 (no client popup to close).
-// - Client heartbeat: idle >150s → emit(42, roomCode). We mirror it faster (120s).
-// - Drawer idleness is measured by REAL DRAW PACKETS during the turn window.
-//   So on our turn we scribble tiny strokes every 25s until the turn ends.
-// - Word choices (16) have a short window: pick word 0 at 8s.
+// anti_afk — constant real activity (the only thing the server counts).
+// From room.js + Kawaii analysis:
+// - Kawaii has NO afk timer/code: its users survive via CONSTANT REAL ACTIONS
+//   (draw bot packets every 120ms, auto-guess answers). We mirror that, minimally.
+// - Heartbeat every 60s: 42[42,"CODE"] (game's own form, just more frequent).
+// - Our turn: word 0 at 8s, first scribble at 5s, then every 20s until turn ends.
 // - Counter-vote retaliation kept (verified Kawaii semantics).
-// Wire mirrors the game client: 42[42,"CODE"], 42[34,"CODE",0], 42[45,...].
+// Wire mirrors the game client exactly.
 // Runs on WsCore bus + raw tap (dependency). Never touches raw WS directly.
 // __omniWsHub __omniHubReady — omni-aware marker, runs in VM.
 
@@ -23,9 +22,10 @@
 
     function bus() { return w.WsCore || null; }
 
-    const HEARTBEAT_MS = 120000;
+    const HEARTBEAT_MS = 60000;
     const WORD_MS = 8000;
-    const SCRIBBLE_MS = 25000;
+    const SCRIBBLE_FIRST_MS = 5000;
+    const SCRIBBLE_MS = 20000;
     const VOTE_COOLDOWN_MS = 60000;
     let beatTimer = null;
     let wordTimer = null;
@@ -50,7 +50,9 @@
         const code = roomCode();
         const b = bus();
         if (!code || !b) return;
-        try { b.sendRaw('42[42,"' + code + '"]'); } catch (e) {}
+        let ok = false;
+        try { ok = b.sendRaw('42[42,"' + code + '"]'); } catch (e) {}
+        console.log('[anti_afk] beat -> ' + (ok ? 'sent' : 'FAILED'));
     }
     function guardWord() {
         wordTimer = null;
@@ -75,7 +77,8 @@
     }
     function armTurn() {
         disarm();
-        scribble();
+        console.log('[anti_afk] my turn — guard armed');
+        setTimeout(() => { if (scribbleTimer) scribble(); }, SCRIBBLE_FIRST_MS);
         scribbleTimer = setInterval(scribble, SCRIBBLE_MS);
     }
     function onVotekick(voterRaw, targetRaw) {
