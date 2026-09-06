@@ -1,0 +1,131 @@
+// anti_afk — game-mirrored activity.
+// How the game really works (from room.js analysis):
+// - Client tracks last action (_ativo). Every 1s: idle >150s → emit(42, roomCode).
+//   THAT is the anti-AFK heartbeat. We mirror it unconditionally every 150s.
+// - Turn: word choices (16) come with a SHORT pick window; drawing phase needs
+//   real strokes. Idle drawer loses the turn (INACTIVE verdict is server-side).
+// - So: pick word 0 at ~10s (late enough not to steal slow choosers), dot at ~20s.
+// - Counter-vote retaliation kept (verified Kawaii semantics).
+// Wire mirrors the game client exactly: 42[42,"CODE"], 42[34,"CODE",0], 42[45,...].
+// Runs on WsCore bus + raw tap (dependency). Never touches raw WS directly.
+// __omniWsHub __omniHubReady — omni-aware marker, runs in VM.
+
+(function () {
+    'use strict';
+    const w = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+
+    const Orbit = (w.Orbit && typeof w.Orbit.verify === 'function') ? w.Orbit : null;
+    if (!Orbit) return;
+    const token = Orbit.verify('anti_afk');
+    if (!token || token.indexOf('anti_afk') === -1) return;
+    if (w.__antiAfk) return;
+    w.__antiAfk = true;
+
+    function bus() { return w.WsCore || null; }
+
+    const HEARTBEAT_MS = 150000;
+    const WORD_MS = 10000;
+    const DOT_MS = 20000;
+    const VOTE_COOLDOWN_MS = 60000;
+    let beatTimer = null;
+    let wordTimer = null;
+    let dotTimer = null;
+    const votedAt = {};
+
+    function roomCode() {
+        try {
+            const segs = (location.pathname || '').split('/').filter(s => s);
+            if (segs.length && /^[A-Za-z0-9]{3,8}$/.test(segs[0])) return segs[0];
+        } catch (e) {}
+        return null;
+    }
+    function myId() {
+        try { return Orbit.api.getMyId(); } catch (e) { return null; }
+    }
+    function bare(s) {
+        return String(s == null ? '' : s).replace(/^"|"$/g, '');
+    }
+    function heartbeat() {
+        const code = roomCode();
+        const b = bus();
+        if (!code || !b) return;
+        try { b.sendRaw('42[42,"' + code + '"]'); } catch (e) {}
+    }
+    function guardWord() {
+        wordTimer = null;
+        const code = roomCode();
+        const b = bus();
+        if (!code || !b) return;
+        try { b.sendRaw('42[34,"' + code + '",0]'); } catch (e) {}
+        console.log('[anti_afk] word 0 picked');
+    }
+    function guardDot() {
+        dotTimer = null;
+        const b = bus();
+        if (!b) return;
+        try { b.sendDraw([2, 765, 445, 766, 446]); } catch (e) {}
+        console.log('[anti_afk] guard dot placed');
+    }
+    function disarm() {
+        if (wordTimer) { clearTimeout(wordTimer); wordTimer = null; }
+        if (dotTimer) { clearTimeout(dotTimer); dotTimer = null; }
+    }
+    function onVotekick(voterRaw, targetRaw) {
+        const me = myId();
+        if (me == null) return;
+        if (bare(targetRaw) !== String(me)) return;
+        const voter = bare(voterRaw);
+        if (!voter) return;
+        const now = Date.now();
+        if (votedAt[voter] && now - votedAt[voter] < VOTE_COOLDOWN_MS) return;
+        const code = roomCode();
+        if (!code) return;
+        const b = bus();
+        if (!b) return;
+        const voterToken = /^\d+$/.test(voter) ? voter : '"' + voter + '"';
+        let ok = false;
+        try { ok = b.sendRaw('42[45,"' + code + '",[' + voterToken + ',true]]'); } catch (e) {}
+        if (ok) {
+            votedAt[voter] = now;
+            console.log('[anti_afk] counter-vote against ' + voter);
+        }
+    }
+
+    function boot() {
+        const b = bus();
+        if (!b) { setTimeout(boot, 500); return; }
+        beatTimer = setInterval(heartbeat, HEARTBEAT_MS);
+        // 16 = word choices for us → pick word 0 at WORD_MS, dot at DOT_MS.
+        b.onPacket('16', () => {
+            disarm();
+            wordTimer = setTimeout(guardWord, WORD_MS);
+            dotTimer = setTimeout(guardDot, DOT_MS);
+        });
+        // 17 = turn assign elsewhere → stand down.
+        b.onPacket('17', data => {
+            const me = myId();
+            if (me == null || String(data[1]) !== String(me)) disarm();
+        });
+        // Raw tap for 38 (votekick): direct extract, no JSON dependency.
+        try {
+            Orbit.hub.onWS(msg => {
+                if (msg == null || typeof msg.indexOf !== 'function') return;
+                const P = '42[38,';
+                const at = msg.indexOf(P);
+                if (at < 0) return;
+                const parts = msg.slice(at + P.length).split(',');
+                if (parts.length < 3) return;
+                onVotekick(parts[0], parts[1]);
+            });
+        } catch (e) {}
+        console.log('[anti_afk] heartbeat + turn guard + counter-vote active');
+    }
+
+    boot();
+
+    w.OmniStop_anti_afk = function () {
+        disarm();
+        if (beatTimer) { clearInterval(beatTimer); beatTimer = null; }
+        try { delete w.__antiAfk; } catch (e) {}
+    };
+})();
