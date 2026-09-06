@@ -5,6 +5,10 @@ Versions: `voyager` and `omni` (framework, ex-orbit) version independently;
 plugins carry their own version.
 
 ## [Unreleased]
+- ROLLBACK to last-known-good (load failures Direncli): voyager 2.3 + omni 4.0 +
+  ws_core 1.2 + pixel_drawer 2.3 (8x8, 2-2-2 bit, 250ms). Effort split, turn gate,
+  ws raw parser and newer features STAY IN ABYSS LAB until the exec cause is found.
+  Silence kept: rebuilt with forge nolog + red banner. Public pins old logic.
 - omni 4.1: visible load receipt (toast shows per-plugin loaded/fetch/exec/dep status).
 - Silent public: forge nolog strips all console.* (keep-log banner survives).
   Only output: big red startup banner. Voyager fully silent.

@@ -1,12 +1,11 @@
 {
   "id": "pixel_drawer",
   "name": "Pixel Drawer",
-  "description": "Turn-gated photo sender (E16/E17 gate, effort renders, 200ms/packet, omni theme)",
+  "description": "Photo to 8x8, 2-2-2 bit color, 1 packet per 250ms",
   "entry": "pixel_drawer.fs",
   "mustContain": "__pixelDrawer",
   "dependencies": [
-    "ws_core",
-    "effort_engine"
+    "ws_core"
   ],
-  "version": "3.6"
+  "version": "2.3"
 }
