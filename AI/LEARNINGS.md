@@ -42,3 +42,12 @@
 ## 2026-09-05 — mobile debugging
 - User tests on mobile Firefox-based browser, no console access. All diagnosis needs visual feedback
   (debug badges, on-screen status). Never rely on "check the console".
+
+## 2026-09-06 — anti_afk 6.0 (room.js AFK chain, verified from reference chunks)
+- Idle over 150s (`_timerAtivo` 1s tick) emits `avisoInativo` → React ALERT popup
+  (OK = close + `active()`). `active()` = socket emit 42 + room code → wire `42[42,"CODE"]`.
+  Server packet 32 = inactivity notice (`inativo` event).
+- Plugin simulates the game's OWN ping every 30s (5x margin) → popup never fires.
+  Recovery ping if 32 arrives anyway. No scribble/vote extras (5.0 Kawaii-mirror retired).
+- `.fs` builds lose the `__omniWsHub` marker comment (strip pass) — expected, matches
+  pixel_drawer/ws_core precedent. mustContain uses a code identifier (`__antiAfk`), never a comment.
