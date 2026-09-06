@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      2.2
+// @version      2.3
 // @description  Omni loader — self-checks version, then runs the framework (.fs via embedded runner).
 // @match        https://gartic.io/*
 // @grant        GM_xmlhttpRequest
