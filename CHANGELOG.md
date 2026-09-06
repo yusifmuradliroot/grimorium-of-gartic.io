@@ -17,6 +17,9 @@ plugins carry their own version.
 - check.py: signature order fixed to runner order (was inverse; false FAIL on [2,0,1]).
 - effort_engine 1.1: color-first — quantize once at 32x32, smaller grids derived
   by nearest sample (no re-averaging, details keep their colors).
+- effort_engine 2.0 + pixel_drawer 3.5: backported v3 quality — flood background
+  (inverse-dominant + [7,0,0], cells skipped), merged rectangles (right+down),
+  aspect-aware ladder 16–48, full-res source + bit-shift snap.
 - omni 2.x–3.x: dependency resolution, theme bus, roster core, settings panel.
 - voyager 1.x: self-check + fail-closed blocker, single GM_info version source.
 - mywsid saga resolved via tolerant direct extract (see abyss LEARNINGS).
