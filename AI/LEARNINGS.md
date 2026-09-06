@@ -62,3 +62,9 @@
 - 7.0 ALSO failed live → pulled from public. Finder likely misses on mobile layout
   (different selectors/fiber shape). Raw stays in abyss for lab work; do NOT republish
   without a live mobile verification first.
+
+## 2026-09-06 — pixel split (effort_engine 1.0 + pixel_drawer 3.0)
+- Engine owns ALL compute (raster, 3-3-3 quantize, grid pick, queue); sender owns UI +
+  turn gate + timing. Shared via `w.Effort`, wired as loader `dependencies`.
+- Grid auto-pick: first of 32/28/24/20/16 with packets×0.2s ≤ 100s (tempoRodada per docs);
+  16x16 returned even if over budget. Turn = E16 or E17-with-our-id; end = E19/E17-other.

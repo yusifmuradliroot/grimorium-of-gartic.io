@@ -1,0 +1,11 @@
+{
+  "id": "effort_engine",
+  "name": "Effort Engine",
+  "description": "Render core: 3-3-3 bit photo quantize, auto grid 16-32 by time budget, packet queue builder",
+  "entry": "effort_engine.fs",
+  "mustContain": "__effortEngine",
+  "dependencies": [
+    "ws_core"
+  ],
+  "version": "1.0"
+}
