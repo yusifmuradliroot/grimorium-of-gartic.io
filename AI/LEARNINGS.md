@@ -59,3 +59,6 @@
 - 7.0 does the same from inside the plugin (DOM via unsafeWindow, fiber walk capped at
   400 nodes): `game._ativo = now + game.active()` every 30s; wire ping only as fallback
   until the object is found. Lesson: simulate the game's METHOD, not just its packets.
+- 7.0 ALSO failed live → pulled from public. Finder likely misses on mobile layout
+  (different selectors/fiber shape). Raw stays in abyss for lab work; do NOT republish
+  without a live mobile verification first.

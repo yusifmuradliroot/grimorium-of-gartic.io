@@ -8,7 +8,8 @@ plugins carry their own version.
 
 ## Releases
 - omni 4.0 + voyager 2.x: embedded forgescript runner, `.fs` era (FS:2 signed).
-  Public set: voyager.user.js + omni.fs + pixel_drawer.fs + ws_core.fs + anti_afk.fs 7.0.
+  Public set: voyager.user.js + omni.fs + pixel_drawer.fs + ws_core.fs.
+  (anti_afk pulled: live-object finder failed on mobile, back to abyss lab.)
 - omni 2.x–3.x: dependency resolution, theme bus, roster core, settings panel.
 - voyager 1.x: self-check + fail-closed blocker, single GM_info version source.
 - mywsid saga resolved via tolerant direct extract (see abyss LEARNINGS).
