@@ -1,0 +1,8 @@
+{
+  "id": "room_scout",
+  "name": "Room Scout",
+  "description": "Room browser + background player fetch (self-contained)",
+  "entry": "room_scout.fs",
+  "mustContain": "__roomScout",
+  "version": "3.0"
+}
