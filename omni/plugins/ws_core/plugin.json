@@ -4,5 +4,5 @@
   "description": "Owns the socket: session, identity, roster + ws service",
   "entry": "ws_core.fs",
   "mustContain": "__omniWsCore",
-  "version": "2.1"
+  "version": "2.2"
 }
