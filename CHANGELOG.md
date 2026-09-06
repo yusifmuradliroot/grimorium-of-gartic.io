@@ -13,6 +13,8 @@ plugins carry their own version.
 - effort_engine 1.0 (new) + pixel_drawer 3.0: render split — engine quantizes 3-3-3 bit,
   auto-picks grid 16–32 by 100s budget; sender is turn-gated (faded until E16/E17-ours),
   200ms/packet, follows omni theme.
+- pixel_drawer 3.1: E17 no longer clobbers E16 state when identity unknown + turn logs.
+- check.py: signature order fixed to runner order (was inverse; false FAIL on [2,0,1]).
 - omni 2.x–3.x: dependency resolution, theme bus, roster core, settings panel.
 - voyager 1.x: self-check + fail-closed blocker, single GM_info version source.
 - mywsid saga resolved via tolerant direct extract (see abyss LEARNINGS).
