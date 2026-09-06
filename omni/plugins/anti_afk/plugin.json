@@ -1,9 +1,0 @@
-{
-  "id": "anti_afk",
-  "name": "Anti AFK",
-  "description": "Constant real activity guard (heartbeat + scribble) + counter-vote",
-  "entry": "anti_afk.js",
-  "mustContain": "__antiAfk",
-  "dependencies": ["ws_core"],
-  "version": "5.0"
-}

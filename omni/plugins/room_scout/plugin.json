@@ -1,9 +1,0 @@
-{
-  "id": "room_scout",
-  "name": "Room Scout",
-  "description": "Live rooms + background player fetch (token, socket, E5)",
-  "entry": "room_scout.js",
-  "mustContain": "__roomScout",
-  "dependencies": ["ws_core"],
-  "version": "2.8"
-}

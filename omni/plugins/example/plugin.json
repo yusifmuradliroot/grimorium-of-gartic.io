@@ -1,9 +1,0 @@
-{
-  "id": "example",
-  "name": "Example Plugin",
-  "description": "Reference template — copy this folder to create a new plugin",
-  "entry": "example.js",
-  "mustContain": "__omniExample",
-  "dependencies": [],
-  "version": "0.1"
-}
