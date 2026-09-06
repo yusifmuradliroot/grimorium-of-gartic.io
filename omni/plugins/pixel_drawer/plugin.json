@@ -5,7 +5,8 @@
   "entry": "pixel_drawer.fs",
   "mustContain": "__pixelDrawer",
   "dependencies": [
-    "ws_core"
+    "ws_core",
+    "effort_engine"
   ],
-  "version": "4.0"
+  "version": "4.1"
 }
