@@ -1,40 +1,32 @@
 # WHEREWEARE — living state (AI: keep this updated)
 
 ## Goal
-Rebuild `grimorium-of-gartic.io` from zero on branch `aetherial` as a strong
-Gartic.io scripting platform (SDK vision). Description: "Scripting platform for Gartic.io".
+`grimorium-of-gartic.io` (PUBLIC, branch `aetherial`) is the protected distribution
+of the Gartic.io scripting platform (SDK vision). Raw source lives in private abyss;
+this repo receives built output. Export is MANUAL.
 
 ## Done
-- Repo cleaned, branch `main` deleted, `aetherial` is default.
-- Settings: description, topics (gartic-io, userscript, tampermonkey, violentmonkey, firefox), custom LICENSE, issues open, no branch protection.
-- Skeleton: `omni/{voyager,omni,plugins}`, `docs/`, plus README, .gitignore, CHANGELOG.
-  ("orbit" retired — framework is `omni`, ships as `omni.fs`; voyager stays the only `.js`.)
-- Docs: `VERSIONING.md` (plugin single version, core separate, omni derived `v+o`), `TERMS.md` (user agreement).
-- Plugin system: `index.json` (folder names) + per-plugin folder (`plugin.json` + entry js). Reference `example/` template exists. Real pixel_drawer NOT public yet.
-- Bug report template in `.github/ISSUE_TEMPLATE/`.
-- Build mode: MANUAL (automation later).
-- AI infra: AGENTS.md + AI/{RULES,WHEREWEARE,CONTEXT,LEARNINGS} with handoff, privacy,
-  no-rambling, prune and context-cue rules. Target env rule: Firefox-based + Violentmonkey.
-- Code cleanliness rule: no AI notes in shipped code (example/ scripts excepted, human-readable).
+- Repo rebuilt from zero: description, topics, custom LICENSE, issues open, no protection.
+- Skeleton: `omni/{voyager,omni,plugins}`, `docs/`, README, .gitignore, CHANGELOG.
+- Docs: `VERSIONING.md` (parts version independently, plugins single version),
+  `TERMS.md` (user agreement, English).
+- AI infra: AGENTS.md + AI/ (17 rules), bug template, link checker (`tools/check.py`
+  validates .js entries and signed `.fs` entries).
+- Production chain LIVE: voyager 2.3 (forged, embedded runner, self-check + blocker)
+  boots `omni.fs` (FS:2 signed, forge-built). Only `.js` file in the whole chain.
+- Current public set: voyager + omni.fs + pixel_drawer.fs + ws_core.fs.
+  (Older public plugins were removed; abyss keeps all sources.)
 
 ## User context
-- Device: mobile, Firefox-based. Console: NONE → visual-feedback diagnosis only.
-
-## Done (abyss side)
-- Abyss reorganized: `omni/{voyager,omni,plugins,dist}` raw layout mirroring grimorium,
-  dead files deleted (2.0M → 0.9M), own AGENTS.md + AI/ (full annotation allowed). Push `2c160f0`.
-- Two-repo sync active: `tools/check.py` on both sides, rule 14 in both RULES.md.
+- Device: mobile, Firefox-based. Console: AVAILABLE for now (past logs received).
+  Diagnose via console when present, badge otherwise.
 
 ## In progress
-- DUAL-DEV until first stable: omni framework developed here AND in abyss (raw).
-  After first stable: normal flow resumes (abyss → forge → grimorium).
+- (next AI: fill here)
 
 ## Next
-- Fresh core code in `abyss` (raw voyager + omni framework, "Omni" branding everywhere).
-- Protection build step abyss → grimorium (verify, mustContain, license headers).
-- First real plugin publication.
+- verify live boot of the .fs chain in a real room
+- republish further plugins (from abyss) on order
 
 ## Open problems
-- **mywsid capture saga (unresolved):** Orbit API Engine must own mywsid so it survives
-  plugin reloads. `41` messages must NOT clear mywsid. Plugin must run in VM
-  (omni-aware marker), not page-inject. See LEARNINGS.md.
+- (none open — mywsid saga RESOLVED via tolerant direct extract; see abyss LEARNINGS)
