@@ -5,6 +5,8 @@ Versions: `voyager` and `omni` (framework, ex-orbit) version independently;
 plugins carry their own version.
 
 ## [Unreleased]
+- omni 6.0: no sockets/identity in core (unified events/store/services API).
+  NOTE: pixel_drawer + ws_core predate the API and go silent until rewritten.
 - omni 5.1: own embedded runner only (no borrowing from voyager).
 - omni 5.0: clean recode (Hub + API + GUI + Loader). .fs-only, own-runner
   fallback, index-validated stored selection, receipt toast, Reset Omni.
