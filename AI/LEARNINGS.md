@@ -80,3 +80,9 @@
 - Downscaling the full-color photo per grid muddied small details (average-then-quantize).
   Now: quantize once at 32x32, derive smaller grids by nearest sample from quantized cells.
   Lesson: decide colors at max resolution, degrade geometry afterwards — never reverse.
+
+## 2026-09-06 — effort 2.0 v3 backport
+- Per-cell packets were the real quality killer (~1000pk vs ~150 merged): grid shrank to
+  fit budget, details died. Merged rects + flood bg restored 48-wide grids in budget.
+- Flood = inverse of top-2 dominant mix; flood-colored cells skipped; white group last.
+- Effort↔pixel contract: job {gw, gh, cells(hex, gw*gh), packets, colors, seconds, rects}.
