@@ -5,6 +5,7 @@ Versions: `voyager` and `omni` (framework, ex-orbit) version independently;
 plugins carry their own version.
 
 ## [Unreleased]
+- omni 5.1: own embedded runner only (no borrowing from voyager).
 - omni 5.0: clean recode (Hub + API + GUI + Loader). .fs-only, own-runner
   fallback, index-validated stored selection, receipt toast, Reset Omni.
   Fixes a latent NativeWS(url, undefined) proto bug.
