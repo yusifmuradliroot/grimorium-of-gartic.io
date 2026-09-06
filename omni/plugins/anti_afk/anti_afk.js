@@ -1,12 +1,12 @@
-// anti_afk — game-mirrored activity.
-// How the game really works (from room.js analysis):
-// - Client tracks last action (_ativo). Every 1s: idle >150s → emit(42, roomCode).
-//   THAT is the anti-AFK heartbeat. We mirror it unconditionally every 150s.
-// - Turn: word choices (16) come with a SHORT pick window; drawing phase needs
-//   real strokes. Idle drawer loses the turn (INACTIVE verdict is server-side).
-// - So: pick word 0 at ~10s (late enough not to steal slow choosers), dot at ~20s.
+// anti_afk — game-truth activity.
+// From room.js analysis:
+// - Server verdict "inactive" arrives as socket event 32 (no client popup to close).
+// - Client heartbeat: idle >150s → emit(42, roomCode). We mirror it faster (120s).
+// - Drawer idleness is measured by REAL DRAW PACKETS during the turn window.
+//   So on our turn we scribble tiny strokes every 25s until the turn ends.
+// - Word choices (16) have a short window: pick word 0 at 8s.
 // - Counter-vote retaliation kept (verified Kawaii semantics).
-// Wire mirrors the game client exactly: 42[42,"CODE"], 42[34,"CODE",0], 42[45,...].
+// Wire mirrors the game client: 42[42,"CODE"], 42[34,"CODE",0], 42[45,...].
 // Runs on WsCore bus + raw tap (dependency). Never touches raw WS directly.
 // __omniWsHub __omniHubReady — omni-aware marker, runs in VM.
 
@@ -23,13 +23,14 @@
 
     function bus() { return w.WsCore || null; }
 
-    const HEARTBEAT_MS = 150000;
-    const WORD_MS = 10000;
-    const DOT_MS = 20000;
+    const HEARTBEAT_MS = 120000;
+    const WORD_MS = 8000;
+    const SCRIBBLE_MS = 25000;
     const VOTE_COOLDOWN_MS = 60000;
     let beatTimer = null;
     let wordTimer = null;
-    let dotTimer = null;
+    let scribbleTimer = null;
+    let scribbleN = 0;
     const votedAt = {};
 
     function roomCode() {
@@ -59,16 +60,23 @@
         try { b.sendRaw('42[34,"' + code + '",0]'); } catch (e) {}
         console.log('[anti_afk] word 0 picked');
     }
-    function guardDot() {
-        dotTimer = null;
+    function scribble() {
         const b = bus();
         if (!b) return;
-        try { b.sendDraw([2, 765, 445, 766, 446]); } catch (e) {}
-        console.log('[anti_afk] guard dot placed');
+        try {
+            const x = 740 + (scribbleN % 5) * 4, y = 420 + (scribbleN % 3) * 4;
+            b.sendDraw([2, x, y, x + 3, y + 2, x + 6, y]);
+            scribbleN++;
+        } catch (e) {}
     }
     function disarm() {
         if (wordTimer) { clearTimeout(wordTimer); wordTimer = null; }
-        if (dotTimer) { clearTimeout(dotTimer); dotTimer = null; }
+        if (scribbleTimer) { clearInterval(scribbleTimer); scribbleTimer = null; }
+    }
+    function armTurn() {
+        disarm();
+        scribble();
+        scribbleTimer = setInterval(scribble, SCRIBBLE_MS);
     }
     function onVotekick(voterRaw, targetRaw) {
         const me = myId();
@@ -95,16 +103,16 @@
         const b = bus();
         if (!b) { setTimeout(boot, 500); return; }
         beatTimer = setInterval(heartbeat, HEARTBEAT_MS);
-        // 16 = word choices for us → pick word 0 at WORD_MS, dot at DOT_MS.
+        // 16 = our word choices → pick fast, arm is implied (turn is ours).
         b.onPacket('16', () => {
             disarm();
             wordTimer = setTimeout(guardWord, WORD_MS);
-            dotTimer = setTimeout(guardDot, DOT_MS);
         });
-        // 17 = turn assign elsewhere → stand down.
+        // 17 = turn assign. Ours → scribble loop; others → stand down.
         b.onPacket('17', data => {
             const me = myId();
-            if (me == null || String(data[1]) !== String(me)) disarm();
+            if (me != null && String(data[1]) === String(me)) armTurn();
+            else disarm();
         });
         // Raw tap for 38 (votekick): direct extract, no JSON dependency.
         try {
@@ -118,7 +126,7 @@
                 onVotekick(parts[0], parts[1]);
             });
         } catch (e) {}
-        console.log('[anti_afk] heartbeat + turn guard + counter-vote active');
+        console.log('[anti_afk] heartbeat + scribble guard + counter-vote active');
     }
 
     boot();
