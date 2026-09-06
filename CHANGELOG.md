@@ -5,6 +5,9 @@ Versions: `voyager` and `omni` (framework, ex-orbit) version independently;
 plugins carry their own version.
 
 ## [Unreleased]
+- omni 5.0: clean recode (Hub + API + GUI + Loader). .fs-only, own-runner
+  fallback, index-validated stored selection, receipt toast, Reset Omni.
+  Fixes a latent NativeWS(url, undefined) proto bug.
 - forge 2.7.1 rebuild: embedded runner keeps its global name (short had
   renamed it, breaking every .fs plugin load). Full chain re-verified.
 - ROLLBACK to last-known-good (load failures Direncli): voyager 2.3 + omni 4.0 +
