@@ -1,9 +1,12 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      2.5
+// @version      2.6
 // @description  Omni loader — self-checks version, then runs the framework (.fs via embedded runner).
 // @match        https://gartic.io/*
+// @connect      raw.githubusercontent.com
+// @connect      cdn.jsdelivr.net
+// @grant        GM_xmlhttpRequest
 // @grant        GM_info
 // @grant        unsafeWindow
 // @run-at       document-start
@@ -35,6 +38,12 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     function af(url, cb, eb) {
         const ag = url + (url.indexOf('?') === -1 ? '?_=' + Date.now() : '&_=' + Date.now());
         try {
+            if (typeof GM_xmlhttpRequest === 'function') {
+                GM_xmlhttpRequest({ method: 'GET', url: ag, timeout: 15000,
+                    onload: as => (as.status >= 200 && as.status < 400 && as.responseText) ? cb(as.responseText) : eb && eb('status ' + as.status),
+                    onerror: () => eb && eb('onerror'), ontimeout: () => eb && eb('timeout') });
+                return;
+            }
             fetch(ag, { cache: 'no-store' }).then(as => {
                 if (!as.ok) throw new Error('fetch ' + as.status);
                 return as.text();
