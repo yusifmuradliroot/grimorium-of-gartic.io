@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '3.0';
+    const VERSION = '3.1';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -113,8 +113,10 @@
         }
         return origAddEvent.call(this, type, cb, opts);
     };
+    let savedOnmsgDesc = null;
     try {
         const desc = Object.getOwnPropertyDescriptor(NativeWS.prototype, 'onmessage');
+        savedOnmsgDesc = desc;
         if (desc && desc.set) {
             Object.defineProperty(NativeWS.prototype, 'onmessage', {
                 get: function () { return desc.get.call(this); },
@@ -355,7 +357,20 @@
                 '<div style="display:flex !important;gap:10px !important;margin-top:8px !important;"><button id="omni-decline" style="flex:1 !important;padding:14px !important;border:1px solid ' + th().line + ' !important;background:' + th().ghost + ' !important;color:' + th().ink + ' !important;border-radius:10px !important;font:bold 15px Arial !important;cursor:pointer !important;">Decline</button><button id="omni-accept" style="flex:2 !important;padding:14px !important;border:none !important;background:#27ae60 !important;color:#fff !important;border-radius:10px !important;font:bold 15px Arial !important;cursor:pointer !important;">Accept &amp; Continue</button></div>' +
                 '</div></div>';
             document.body.appendChild(overlay);
-            overlay.querySelector('#omni-decline').addEventListener('click', () => overlay.remove());
+            overlay.querySelector('#omni-decline').addEventListener('click', () => { overlay.remove(); declineUnwind(); });
+            function declineUnwind() {
+                try { w.WebSocket = NativeWS; } catch (e) {}
+                try { NativeWS.prototype.addEventListener = origAddEvent; } catch (e) {}
+                try {
+                    if (savedOnmsgDesc) Object.defineProperty(NativeWS.prototype, 'onmessage', savedOnmsgDesc);
+                } catch (e) {}
+                ['sendWS', 'onWS', 'offWS', 'onWSSend', 'offWSSend', 'wsHubGetSocket', 'getMyWsId', 'getMyId', 'getPlayers', 'getSession', 'setMyWsId', 'mywsid', 'myid', 'Orbit', '__omni', '__omniWsHub', '__omniApiReady', '__omniTheme'].forEach(k => { try { delete w[k]; } catch (e) {} });
+                try {
+                    const b = document.getElementById('omni-settings-btn');
+                    if (b) b.remove();
+                } catch (e) {}
+                console.log('[omni] declined — unwound');
+            }
             overlay.querySelector('#omni-accept').addEventListener('click', () => {
                 gSet(STORE_AGREED, true);
                 overlay.remove();
@@ -385,7 +400,7 @@
                 raw => {
                     let names = [];
                     try { names = JSON.parse(raw); } catch (e) {}
-                    if (!Array.isArray(names) || !names.length) { list.textContent = 'No plugins available.'; return; }
+                    if (!Array.isArray(names) || !names.length) { list.textContent = 'No plugins available.'; wire(list, overlay); return; }
                     list.innerHTML = '';
                     let pending = names.length;
                     names.forEach(n => {
