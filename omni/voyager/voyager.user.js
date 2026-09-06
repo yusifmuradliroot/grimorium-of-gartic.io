@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      2.6
+// @version      2.3
 // @description  Omni loader — self-checks version, then runs the framework (.fs via embedded runner).
 // @match        https://gartic.io/*
-// @connect      raw.githubusercontent.com
-// @connect      cdn.jsdelivr.net
 // @grant        GM_xmlhttpRequest
+// @grant        GM.xmlHttpRequest
 // @grant        GM_info
 // @grant        unsafeWindow
 // @run-at       document-start
@@ -33,21 +32,20 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
             return (typeof v === 'string' && v) ? v : null;
         } catch (e) { return null; }
     }
-    
-    
     function af(url, cb, eb) {
         const ag = url + (url.indexOf('?') === -1 ? '?_=' + Date.now() : '&_=' + Date.now());
         try {
             if (typeof GM_xmlhttpRequest === 'function') {
-                GM_xmlhttpRequest({ method: 'GET', url: ag, timeout: 15000,
+                GM_xmlhttpRequest({ method: 'GET', url: ag, timeout: 10000,
                     onload: as => (as.status >= 200 && as.status < 400 && as.responseText) ? cb(as.responseText) : eb && eb('status ' + as.status),
                     onerror: () => eb && eb('onerror'), ontimeout: () => eb && eb('timeout') });
-                return;
+            } else if (typeof GM !== 'undefined' && GM.xmlHttpRequest) {
+                GM.xmlHttpRequest({ method: 'GET', url: ag,
+                    onload: as => (as.status >= 200 && as.status < 400 && as.responseText) ? cb(as.responseText) : eb && eb('status'),
+                    onerror: () => eb && eb('onerror') });
+            } else {
+                fetch(ag, { cache: 'no-store' }).then(as => { if (!as.ok) throw new Error('fetch ' + as.status); return as.text(); }).then(cb).catch(e => eb && eb(String(e)));
             }
-            fetch(ag, { cache: 'no-store' }).then(as => {
-                if (!as.ok) throw new Error('fetch ' + as.status);
-                return as.text();
-            }).then(cb).catch(e => eb && eb(String(e)));
         } catch (e) { eb && eb(String(e)); }
     }
     function ar(src) {
@@ -96,7 +94,7 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     }
     function ae(code, src) {
         
-        if (typeof code !== 'string' || code.indexOf('FS:2\n') !== 0) {
+        if (typeof code !== 'string' || (code.indexOf('FS:2\n') !== 0 && code.indexOf('FS:1\n') !== 0)) {
             ;
             return false;
         }
