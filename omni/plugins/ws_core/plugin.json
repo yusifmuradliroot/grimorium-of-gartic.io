@@ -1,8 +1,0 @@
-{
-  "id": "ws_core",
-  "name": "WS Core",
-  "description": "Shared packet bus: subscribe by code, send draw packets, mywsid with wait",
-  "entry": "ws_core.fs",
-  "mustContain": "__omniWsCore",
-  "version": "1.2"
-}
