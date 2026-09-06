@@ -1,8 +1,8 @@
 {
   "id": "ws_core",
   "name": "WS Core",
-  "description": "Owns the socket: session, identity, roster + ws service",
+  "description": "Owns the wire (WS + polling tap, raw, zero JSON) + ws service",
   "entry": "ws_core.fs",
   "mustContain": "__omniWsCore",
-  "version": "2.3"
+  "version": "2.4"
 }
