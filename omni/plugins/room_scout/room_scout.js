@@ -235,6 +235,18 @@
             });
         });
     }
+    const expanded = new Set();
+    const playerCache = {};
+    function paintPlayers(sub, room, players) {
+        sub.innerHTML = '';
+        players.forEach(p => {
+            const c = document.createElement('span');
+            c.style.cssText = 'padding:4px 9px !important;background:#1e272e !important;color:#ecf0f1 !important;border:1px solid #34495e !important;border-radius:12px !important;font:12px Arial !important;cursor:pointer !important;';
+            c.textContent = (p.nick || ('#' + p.id)) + (p.pontos != null ? ' ' + p.pontos : '');
+            c.addEventListener('click', () => go(room.code));
+            sub.appendChild(c);
+        });
+    }
     function row(room) {
         const wrap = document.createElement('div');
         wrap.style.cssText = 'display:flex !important;flex-direction:column !important;gap:0 !important;';
@@ -253,10 +265,11 @@
         const sub = document.createElement('div');
         sub.style.cssText = 'display:none !important;flex-wrap:wrap !important;gap:5px !important;padding:8px 4px 2px 16px !important;';
         let busy = false;
-        pb.addEventListener('click', () => {
-            if (sub.style.display !== 'none') { sub.style.display = 'none'; return; }
+        function openSub() {
             sub.style.display = 'flex';
-            if (sub.dataset.done === '1' || busy) return;
+            expanded.add(room.code);
+            if (playerCache[room.code]) { paintPlayers(sub, room, playerCache[room.code]); return; }
+            if (busy) return;
             busy = true;
             sub.innerHTML = '';
             const ld = document.createElement('span');
@@ -265,22 +278,32 @@
             sub.appendChild(ld);
             fetchPlayers(room, (players, err) => {
                 busy = false;
-                sub.innerHTML = '';
                 if (!players) {
+                    sub.innerHTML = '';
                     ld.textContent = 'failed: ' + (err || 'unknown');
                     sub.appendChild(ld);
                     return;
                 }
-                sub.dataset.done = '1';
-                players.forEach(p => {
-                    const c = document.createElement('span');
-                    c.style.cssText = 'padding:4px 9px !important;background:#1e272e !important;color:#ecf0f1 !important;border:1px solid #34495e !important;border-radius:12px !important;font:12px Arial !important;cursor:pointer !important;';
-                    c.textContent = (p.nick || ('#' + p.id)) + (p.pontos != null ? ' ' + p.pontos : '');
-                    c.addEventListener('click', () => go(room.code));
-                    sub.appendChild(c);
-                });
+                playerCache[room.code] = players;
+                paintPlayers(sub, room, players);
             });
+        }
+        pb.addEventListener('click', () => {
+            if (sub.style.display !== 'none') {
+                sub.style.display = 'none';
+                expanded.delete(room.code);
+                return;
+            }
+            openSub();
         });
+        if (expanded.has(room.code)) {
+            if (playerCache[room.code]) {
+                sub.style.display = 'flex';
+                paintPlayers(sub, room, playerCache[room.code]);
+            } else {
+                openSub();
+            }
+        }
         b.appendChild(left);
         b.appendChild(right);
         b.appendChild(pb);
@@ -361,6 +384,11 @@
         subjEl.addEventListener('change', () => { selSubj = subjEl.value; render(); });
         filt.appendChild(langEl);
         filt.appendChild(subjEl);
+        const reBtn = document.createElement('button');
+        reBtn.textContent = 'Refresh';
+        reBtn.style.cssText = 'padding:9px 14px !important;border:none !important;background:#27ae60 !important;color:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;white-space:nowrap !important;';
+        reBtn.addEventListener('click', () => render());
+        filt.appendChild(reBtn);
         listEl = document.createElement('div');
         listEl.style.cssText = 'display:flex !important;flex-direction:column !important;gap:8px !important;';
         const bar = document.createElement('div');
