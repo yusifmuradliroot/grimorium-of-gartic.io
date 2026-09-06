@@ -6,7 +6,7 @@
     if (w.__omni) return;
     w.__omni = true;
 
-    const VERSION = '2.6';
+    const VERSION = '3.0';
     const PLUGIN_BASE = 'https://raw.githubusercontent.com/yusifmuradliroot/grimorium-of-gartic.io/aetherial/omni/plugins/';
     const STORE_AGREED = 'omni_agreed';
     const STORE_PLUGINS = 'omni_plugins_selected';
@@ -80,19 +80,16 @@
         activeWS = inst;
         const realSend = inst.send.bind(inst);
         inst.send = function (data) {
-            console.log('%c[WS →]', 'color:#e74c3c;font-weight:bold', data); // TEMP DEBUG
             for (let i = 0; i < sendListeners.length; i++) try { sendListeners[i](data); } catch (err) {}
             return realSend(data);
         };
-        inst.addEventListener('open', () => { activeWS = inst; console.log('%c[WS OPEN]', 'color:#27ae60;font-weight:bold'); }); // TEMP DEBUG
-        inst.addEventListener('close', () => { if (activeWS === inst) activeWS = null; console.log('%c[WS CLOSE]', 'color:#c0392b'); }); // TEMP DEBUG
+        inst.addEventListener('open', () => { activeWS = inst; });
+        inst.addEventListener('close', () => { if (activeWS === inst) activeWS = null; });
         inst.addEventListener('message', e => {
             let msg = e.data;
             if (typeof msg !== 'string') {
                 try { msg = String(msg); } catch (err) { return; }
             }
-            console.log('%c[WS ←]', 'color:#2ecc71;font-weight:bold', msg); // TEMP DEBUG
-            if (typeof msg === 'string' && msg.indexOf('42["5"') === 0) console.log('[omni] E5 dispatching to ' + listeners.length + ' listeners'); // TEMP DEBUG
             for (let i = 0; i < listeners.length; i++) try { listeners[i](msg); } catch (err) {}
         });
     }
@@ -180,13 +177,11 @@
         if (at < 0) { handleRosterDelta(msg); return; }
         const parts = msg.slice(at + P.length).split(',');
         if (parts.length < 2) return;
-        console.log('[omni] E5 SEEN myid=' + parts[0] + ' mywsid=' + parts[1]); // TEMP DEBUG
         setSession(true);
         const sidNum = Number(parts[1]);
         if (Number.isFinite(sidNum)) setMyWsId(sidNum);
         const midNum = Number(parts[0]);
         if (Number.isFinite(midNum)) { myid = midNum; w.myid = midNum; }
-        console.log('[omni] E5 AFTER mywsid=' + mywsid); // TEMP DEBUG
         // Roster needs full parse: best-effort (ids above never depend on it).
         try {
             const data = JSON.parse(msg.slice(at + 1));
@@ -669,7 +664,10 @@
         resetBtn.textContent = 'Reset Omni';
         resetBtn.style.cssText = 'padding:10px !important;border:none !important;background:#c0392b !important;color:#fff !important;border-radius:8px !important;font:bold 13px Arial !important;cursor:pointer !important;';
         resetBtn.addEventListener('click', () => {
-            try { localStorage.removeItem(STORE_AGREED); localStorage.removeItem(STORE_PLUGINS); } catch (e) {}
+            [STORE_AGREED, STORE_PLUGINS].forEach(k => {
+                try { if (typeof GM_deleteValue === 'function') GM_deleteValue(k); } catch (e) {}
+                try { localStorage.removeItem(k); } catch (e) {}
+            });
             try { location.reload(); } catch (err) {}
         });
         const themeBtn = document.createElement('button');
@@ -691,6 +689,5 @@
     }
 
     console.log('%c[omni] core v' + VERSION + ' ready', 'color:#8e44ad;font-weight:bold');
-    console.log('[omni] boot diag: __omniWsHub=' + !!w.__omniWsHub + ' badges=' + document.querySelectorAll('#omni-debug-badge').length + ' listeners=' + listeners.length); // TEMP DEBUG
     boot();
 })();
