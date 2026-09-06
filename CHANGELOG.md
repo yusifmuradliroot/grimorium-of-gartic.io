@@ -5,6 +5,8 @@ Versions: `voyager` and `omni` (framework, ex-orbit) version independently;
 plugins carry their own version.
 
 ## [Unreleased]
+- forge 2.7.1 rebuild: embedded runner keeps its global name (short had
+  renamed it, breaking every .fs plugin load). Full chain re-verified.
 - ROLLBACK to last-known-good (load failures Direncli): voyager 2.3 + omni 4.0 +
   ws_core 1.2 + pixel_drawer 2.3 (8x8, 2-2-2 bit, 250ms). Effort split, turn gate,
   ws raw parser and newer features STAY IN ABYSS LAB until the exec cause is found.
