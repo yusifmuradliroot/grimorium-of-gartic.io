@@ -5,6 +5,7 @@ Versions: `voyager` and `omni` (framework, ex-orbit) version independently;
 plugins carry their own version.
 
 ## [Unreleased]
+- omni 4.1: visible load receipt (toast shows per-plugin loaded/fetch/exec/dep status).
 - Silent public: forge nolog strips all console.* (keep-log banner survives).
   Only output: big red startup banner. Voyager fully silent.
 - voyager 2.4: fetch-only download (GM_xhr grants dropped, header minimal),
