@@ -88,15 +88,15 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     function ae(code, src) {
         
         if (typeof code !== 'string' || code.indexOf('FS:2\n') !== 0) {
-            console.error(__f("0135373433077a3c283b373f2d3528317a33297a34352e7a3b7a743c297a2a3b2336353b3e607a") + src);
+            
             return false;
         }
         try {
             n.run(code);
-            console.log(__f("0135373433077a3c283b373f2d3528317a282f343433343d7a72") + src + ')');
+            
             return true;
         } catch (e) {
-            console.error(__f("0135373433077a3c283b373f2d3528317a3f223f397a3c3b3336"), e);
+            
             return false;
         }
     }
@@ -108,7 +108,7 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     function aj() {
         af(f,
             code => { ae(code, f); },
-            ad => { console.error(__f("0135373433077a3c283b373f2d3528317a2f34283f3b39323b38363f"), ad); });
+            ad => {  });
     }
     function ac(z, b) {
         const aq = String(z).split('.').map(Number), pb = String(b).split('.').map(Number);
@@ -120,9 +120,9 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     }
 
     const am = ap();
-    console.log(__f("0135373433077a36353b3e3f287a2c") + am + ' — self-check first');
+    
     if (am === null) {
-        console.error(__f("0135373433077a393b3434352e7a283f3b3e7a352d347a2c3f28293335347a721d170533343c357a3733292933343d73"));
+        
         av('error', __f("352d347a2c3f28293335347a2f34283f3b3e3b38363f"));
         return;
     }
@@ -130,19 +130,19 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
         code => {
             const at = ar(code);
             if (!at) {
-                console.error(__f("0135373433077a283f37352e3f7a2c3f28293335347a2f342a3b28293f3b38363f"));
+                
                 av('error', __f("283f37352e3f7a2c3f28293335347a2f342a3b28293f3b38363f"));
                 return;
             }
             if (ac(at, am) > 0) {
-                console.error(__f("0135373433077a352f2e3e3b2e3f3e607a3635393b367a2c") + am + __f("7a2c297a283f37352e3f7a2c") + at);
+                
                 av('outdated', at);
                 return;
             }
             ak();
         },
         ad => {
-            console.error(__f("0135373433077a293f363c7739323f39317a3c3f2e39327a3c3b33363f3e"), ad);
+            
             av('error', __f("2c3f28293335347a39323f39317a2f34283f3b39323b38363f"));
         });
 })();

@@ -5,6 +5,8 @@ Versions: `voyager` and `omni` (framework, ex-orbit) version independently;
 plugins carry their own version.
 
 ## [Unreleased]
+- Silent public: forge nolog strips all console.* (keep-log banner survives).
+  Only output: big red startup banner. Voyager fully silent.
 - voyager 2.4: fetch-only download (GM_xhr grants dropped, header minimal),
   FS:2-only gate (legacy unsigned FS:1 refused at the door).
 - voyager 2.5: carries forge runner v3 (FS:1 reader removed; last reader in forge archive).
