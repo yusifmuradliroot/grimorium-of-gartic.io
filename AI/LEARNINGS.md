@@ -75,3 +75,8 @@
   Pack emitted [2,0,1] → false FAIL on a runner-valid file. Fixed to runner order
   in BOTH repos (shared contract, rule 14). Lesson: verify tooling against the runner,
   not against files that happen to pass.
+
+## 2026-09-06 — effort 1.1 color-first
+- Downscaling the full-color photo per grid muddied small details (average-then-quantize).
+  Now: quantize once at 32x32, derive smaller grids by nearest sample from quantized cells.
+  Lesson: decide colors at max resolution, degrade geometry afterwards — never reverse.
