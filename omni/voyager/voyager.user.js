@@ -1,11 +1,9 @@
 // ==UserScript==
 // @name         Omni
 // @namespace    omni-loader
-// @version      2.3
+// @version      2.4
 // @description  Omni loader — self-checks version, then runs the framework (.fs via embedded runner).
 // @match        https://gartic.io/*
-// @grant        GM_xmlhttpRequest
-// @grant        GM.xmlHttpRequest
 // @grant        GM_info
 // @grant        unsafeWindow
 // @run-at       document-start
@@ -32,20 +30,15 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
             return (typeof v === 'string' && v) ? v : null;
         } catch (e) { return null; }
     }
+    
+    
     function af(url, cb, eb) {
         const ag = url + (url.indexOf('?') === -1 ? '?_=' + Date.now() : '&_=' + Date.now());
         try {
-            if (typeof GM_xmlhttpRequest === 'function') {
-                GM_xmlhttpRequest({ method: 'GET', url: ag, timeout: 10000,
-                    onload: at => (at.status >= 200 && at.status < 400 && at.responseText) ? cb(at.responseText) : eb && eb('status ' + at.status),
-                    onerror: () => eb && eb('onerror'), ontimeout: () => eb && eb('timeout') });
-            } else if (typeof GM !== 'undefined' && GM.xmlHttpRequest) {
-                GM.xmlHttpRequest({ method: 'GET', url: ag,
-                    onload: at => (at.status >= 200 && at.status < 400 && at.responseText) ? cb(at.responseText) : eb && eb('status'),
-                    onerror: () => eb && eb('onerror') });
-            } else {
-                fetch(ag, { cache: 'no-store' }).then(at => { if (!at.ok) throw new Error('fetch ' + at.status); return at.text(); }).then(cb).catch(e => eb && eb(String(e)));
-            }
+            fetch(ag, { cache: 'no-store' }).then(at => {
+                if (!at.ok) throw new Error('fetch ' + at.status);
+                return at.text();
+            }).then(cb).catch(e => eb && eb(String(e)));
         } catch (e) { eb && eb(String(e)); }
     }
     function as(src) {
@@ -94,7 +87,7 @@ var __f=function(s){var o='',i=0;for(;i<s.length;i+=2){o+=String.fromCharCode(pa
     }
     function ae(code, src) {
         
-        if (typeof code !== 'string' || (code.indexOf('FS:2\n') !== 0 && code.indexOf('FS:1\n') !== 0)) {
+        if (typeof code !== 'string' || code.indexOf('FS:2\n') !== 0) {
             console.error(__f("0135373433077a3c283b373f2d3528317a33297a34352e7a3b7a743c297a2a3b2336353b3e607a") + src);
             return false;
         }
