@@ -22,14 +22,14 @@
     w.__roomScout = true;
 
     const LIST_URL = 'https://gartic.io/req/list';
+    let rosterTimer = null;
     const TS_SITEKEY = '0x4AAAAAABBPKaIbNwnPEfSo';
     const TS_API = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     let selLang = '', selSubj = '';
     let langEl = null, subjEl = null;
     const LANGMAP = {"langs": [{"id": 23, "name": "Azərbaycanca", "subjects": [1, 7]}, {"id": 45, "name": "Bahasa Indonesia", "subjects": [1, 7, 2, 3, 4, 16, 6, 26, 28, 35, 12, 31, 8, 14]}, {"id": 11, "name": "Čeština", "subjects": [1, 3, 2, 7, 4]}, {"id": 14, "name": "Deutsch", "subjects": [1, 3, 2, 7]}, {"id": 2, "name": "English", "subjects": [1, 3, 2, 4, 5, 6, 7, 16, 11, 14, 31, 19, 23, 26, 18, 35, 8, 12, 9, 37, 33]}, {"id": 3, "name": "Español", "subjects": [1, 3, 2, 4, 5, 6, 7, 37]}, {"id": 4, "name": "Français", "subjects": [1, 3, 2, 4, 5, 6, 7]}, {"id": 6, "name": "Italiano", "subjects": [1, 3, 2, 4, 5, 6, 7]}, {"id": 44, "name": "Magyar", "subjects": [1, 7]}, {"id": 18, "name": "Nederlands", "subjects": [1, 3, 2, 7]}, {"id": 10, "name": "Polski", "subjects": [1, 3, 2, 7]}, {"id": 1, "name": "Português", "subjects": [1, 3, 2, 4, 5, 6, 7, 31, 14, 16, 12, 17, 11, 8, 26, 23, 35, 18, 28, 9, 19, 32, 33, 37, 15, 27, 38, 13]}, {"id": 58, "name": "Română", "subjects": [1, 7]}, {"id": 22, "name": "Slovenčina", "subjects": [1, 3, 2, 7]}, {"id": 13, "name": "Tiếng Việt", "subjects": [1, 7]}, {"id": 8, "name": "Türkçe", "subjects": [1, 3, 2, 7, 4, 6, 16, 31, 14, 11, 5, 26]}, {"id": 21, "name": "български език", "subjects": [1, 3, 2, 7]}, {"id": 7, "name": "Русский", "subjects": [1, 3, 2, 7]}, {"id": 40, "name": "עברית", "subjects": [1, 7]}, {"id": 19, "name": "العربية", "subjects": [1, 7, 3]}, {"id": 34, "name": "فارسی", "subjects": [1, 7]}, {"id": 12, "name": "ภาษาไทย", "subjects": [1, 7, 2, 4, 3, 6]}, {"id": 16, "name": "中文 (简化字)", "subjects": [1, 3, 2, 7, 4, 6, 11, 31, 28]}, {"id": 9, "name": "中文 (臺灣)", "subjects": [1, 3, 2, 7, 4, 6, 31, 16, 28, 35]}, {"id": 17, "name": "中文 (香港)", "subjects": [1, 3, 2, 7, 4]}, {"id": 15, "name": "日本語", "subjects": [1, 7]}, {"id": 20, "name": "한국어", "subjects": [1, 3, 7]}], "subjects": {"30": "Others / Generic", "1": "General", "2": "Animals", "28": "Animes", "27": "Bands", "9": "Cartoons", "19": "Clash Royale", "38": "Crazy", "23": "Dota", "22": "Dragon Ball", "16": "Flags", "33": "FNAF", "4": "Foods", "17": "Football", "32": "Fortnite", "21": "Game of Thrones", "12": "Games", "37": "Halloween", "18": "Harry Potter", "6": "Jobs", "26": "Logos", "11": "LoL", "20": "Lord of Rings", "14": "Marvel / DC", "31": "Minecraft", "8": "Movies", "35": "Naruto", "3": "Objects", "13": "Personalities", "7": "Pokemon", "15": "Series", "10": "Songs", "29": "Sports", "34": "Star Wars", "25": "Streamers", "36": "The Sims", "5": "Verbs", "24": "Youtubers"}};
     const HIST_KEY = 'room_scout_history';
-    const REFRESH_MS = 15000;
-    let overlay = null, listEl = null, histEl = null, statusEl = null, timer = null;
+    let overlay = null, listEl = null, histEl = null, statusEl = null;
 
     function getHist() {
         try {
@@ -385,10 +385,6 @@
         document.body.appendChild(overlay);
         fillSubjects();
         render();
-        timer = setInterval(render, REFRESH_MS);
-    }
-    function stop() {
-        if (timer) { clearInterval(timer); timer = null; }
     }
 
     // ============ ROSTER mode: on room/viewer pages, live player list ============
@@ -430,11 +426,12 @@
             const b = bus();
             if (b) b.onRoster(() => paintRoster());
         } catch (e) {}
-        setInterval(() => paintRoster(), 5000);
+        if (rosterTimer) { clearInterval(rosterTimer); rosterTimer = null; }
+        rosterTimer = setInterval(() => paintRoster(), 5000);
     }
 
     function stop() {
-        if (timer) { clearInterval(timer); timer = null; }
+        if (rosterTimer) { clearInterval(rosterTimer); rosterTimer = null; }
     }
     w.OmniStop_room_scout = function () {
         stop();
