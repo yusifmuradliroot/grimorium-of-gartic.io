@@ -140,6 +140,29 @@
             return { WS: WS, drop: () => { try { fr.remove(); } catch (e) {} } };
         } catch (e) { return null; }
     }
+    function matchBracket(s, openIdx) {
+        // String-aware bracket matcher: returns the [...] substring or null.
+        // Survives trailing garbage, concatenated packets, unicode.
+        let depth = 0;
+        for (let i = openIdx; i < s.length; i++) {
+            const c = s[i];
+            if (c === '"' || c === "'") {
+                const q = c;
+                i++;
+                while (i < s.length && s[i] !== q) {
+                    if (s[i] === '\\') i++;
+                    i++;
+                }
+                continue;
+            }
+            if (c === '[') depth++;
+            else if (c === ']') {
+                depth--;
+                if (depth === 0) return s.slice(openIdx, i + 1);
+            }
+        }
+        return null;
+    }
     function getJSON(url, cb) {
         try {
             if (typeof GM_xmlhttpRequest === 'function') {
@@ -194,13 +217,19 @@
                     return;
                 }
                 if (msg.indexOf('42["5",') === 0) {
+                    const arr = matchBracket(msg, msg.indexOf('42[') + 2);
                     let players = null;
-                    try {
-                        const data = JSON.parse(msg.slice(msg.indexOf('42[') + 1));
-                        if (Array.isArray(data) && Array.isArray(data[5])) players = data[5];
-                    } catch (e) {}
+                    if (arr !== null) {
+                        try {
+                            const data = JSON.parse(arr);
+                            if (Array.isArray(data) && Array.isArray(data[5])) players = data[5];
+                        } catch (e) {}
+                    }
                     if (players) finish(players, null);
-                    else finish(null, 'parse failed');
+                    else {
+                        try { console.log('[room_scout] parse fail len=' + msg.length + ' tail=' + msg.slice(-80)); } catch (e) {}
+                        finish(null, 'parse failed');
+                    }
                 }
             };
             });
