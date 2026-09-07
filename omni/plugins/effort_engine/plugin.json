@@ -1,8 +1,8 @@
 {
   "id": "effort_engine",
   "name": "Effort Engine",
-  "description": "Block-local palettes (4x4/K3) + 4-4-4 + cost flood",
+  "description": "Adaptive part palettes + global merge + 4-4-4",
   "entry": "effort_engine.fs",
   "mustContain": "__effortEngine",
-  "version": "4.0"
+  "version": "5.0"
 }
