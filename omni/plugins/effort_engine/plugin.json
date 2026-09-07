@@ -1,8 +1,8 @@
 {
   "id": "effort_engine",
   "name": "Effort Engine",
-  "description": "Render core: 4-4-4 bit, 96-ladder, dither, cost-flood, 767x448",
+  "description": "Block-local palettes (4x4/K3) + 4-4-4 + cost flood",
   "entry": "effort_engine.fs",
   "mustContain": "__effortEngine",
-  "version": "3.0"
+  "version": "4.0"
 }
