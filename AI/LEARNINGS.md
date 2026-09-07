@@ -63,6 +63,13 @@
   (different selectors/fiber shape). Raw stays in abyss for lab work; do NOT republish
   without a live mobile verification first.
 
+## 2026-09-06 — mywsid outage post-mortem (root cause: orphaned service binding)
+- Removing the turn gate also removed the only `withWs()` caller → `ws` stayed
+  null → eternal "mywsid waiting". Socket layer was innocent (prototype tap,
+  polling tap, raw parse all verified working).
+- Lesson: staged status text (missing/blind/missed-join/waiting) + wire mirror
+  + receipt toast diagnose faster than any code reading. Keep them in lab builds.
+
 ## 2026-09-06 — pixel split (effort_engine 1.0 + pixel_drawer 3.0)
 - Engine owns ALL compute (raster, 3-3-3 quantize, grid pick, queue); sender owns UI +
   turn gate + timing. Shared via `w.Effort`, wired as loader `dependencies`.
