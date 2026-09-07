@@ -4,5 +4,5 @@
   "description": "Adaptive part palettes + global merge + 4-4-4",
   "entry": "effort_engine.fs",
   "mustContain": "__effortEngine",
-  "version": "5.2"
+  "version": "5.3"
 }
