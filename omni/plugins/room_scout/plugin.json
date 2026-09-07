@@ -4,5 +4,5 @@
   "description": "Room browser + gentle bulk player fetch (self-contained)",
   "entry": "room_scout.fs",
   "mustContain": "__roomScout",
-  "version": "4.0"
+  "version": "4.1"
 }
