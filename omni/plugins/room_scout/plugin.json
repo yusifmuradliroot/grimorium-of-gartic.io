@@ -4,5 +4,5 @@
   "description": "Split watch: persistent room socket, quick switch, answer chat",
   "entry": "room_scout.fs",
   "mustContain": "__roomScout",
-  "version": "5.1"
+  "version": "5.2"
 }
