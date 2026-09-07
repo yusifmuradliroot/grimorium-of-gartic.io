@@ -1,8 +1,8 @@
 {
   "id": "room_scout",
   "name": "Room Scout",
-  "description": "Room browser + gentle bulk player fetch (self-contained)",
+  "description": "Split watch: persistent room socket, quick switch, answer chat",
   "entry": "room_scout.fs",
   "mustContain": "__roomScout",
-  "version": "4.1"
+  "version": "5.0"
 }
