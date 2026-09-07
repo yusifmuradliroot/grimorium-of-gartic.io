@@ -1,8 +1,8 @@
 {
   "id": "effort_engine",
   "name": "Effort Engine",
-  "description": "Render core: flood bg + merged rects + aspect grids 16-48, 3-3-3 bit",
+  "description": "Render core: 4-4-4 bit, 96-ladder, dither, cost-flood, 767x448",
   "entry": "effort_engine.fs",
   "mustContain": "__effortEngine",
-  "version": "2.1"
+  "version": "3.0"
 }
