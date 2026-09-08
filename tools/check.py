@@ -48,6 +48,18 @@ def check_packed(n, entry):
             fail(f"{n}: {entry.name} bad manifest order")
             return
         ordered = [blobs[i] for i in m["o"]]
+        if m.get("k"):
+            # Salted files (forge 2.9+): unrotate disk blobs before verify.
+            try:
+                salt = bytes.fromhex(m["k"])
+                fixed = []
+                for e, b in enumerate(ordered):
+                    r = salt[e % len(salt)] % (len(b) or 1)
+                    fixed.append(b[-r:] + b[:-r] if r else b)
+                ordered = fixed
+            except Exception as e:
+                fail(f"{n}: {entry.name} bad salt: {e}")
+                return
         sig = "%08x" % _fnv1a(("FS:2\n" + ",".join(map(str, m["o"])) + "\n" + "".join(ordered)).encode())
         if sig != m.get("s"):
             fail(f"{n}: {entry.name} signature mismatch")
@@ -57,6 +69,11 @@ def check_packed(n, entry):
 
 def main():
     index_file = PLUGINS / "index.json"
+    core = ROOT / "omni" / "omni" / "omni.fs"
+    if core.is_file():
+        check_packed("omni-core", core)
+    else:
+        fail("missing omni/omni/omni.fs")
     if not index_file.is_file():
         fail("missing omni/plugins/index.json")
         return 1
