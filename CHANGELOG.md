@@ -5,6 +5,7 @@ Versions: `voyager` and `omni` (framework, ex-orbit) version independently;
 plugins carry their own version.
 
 ## [Unreleased]
+- Rebuilt all with forge 2.8.0 (crypt template fix, poison generators).
 - omni 6.0: no sockets/identity in core (unified events/store/services API).
   NOTE: pixel_drawer + ws_core predate the API and go silent until rewritten.
 - omni 5.1: own embedded runner only (no borrowing from voyager).
