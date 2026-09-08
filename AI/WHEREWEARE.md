@@ -26,7 +26,8 @@ this repo receives built output. Export is MANUAL.
   Diagnose via console when present, badge otherwise.
 
 ## In progress
-- (next AI: fill here)
+- Rebuilt all with forge 2.11.1 (voyager 3.4 slot 0752595b, omni 7.2, 6 plugins).
+  Decrypt==dev + markers + syntax verified per file. No source changes.
 
 ## Next
 - verify live boot of the .fs chain in a real room
