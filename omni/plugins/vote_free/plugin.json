@@ -1,0 +1,8 @@
+{
+  "id": "vote_free",
+  "name": "Vote Free",
+  "description": "Removes the 60s votekick cooldown and auto-follows votes",
+  "entry": "vote_free.fs",
+  "mustContain": "__voteFree",
+  "version": "1.0"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "cooldown_killer",
+  "name": "Cooldown Killer",
+  "description": "Removes the 15s room-change wait",
+  "entry": "cooldown_killer.fs",
+  "mustContain": "__cooldownKiller",
+  "version": "1.0"
+}
