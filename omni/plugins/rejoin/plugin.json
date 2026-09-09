@@ -1,0 +1,11 @@
+{
+  "id": "rejoin",
+  "name": "Rejoin",
+  "description": "Auto-return after a kick: reopens the room and presses play",
+  "entry": "rejoin.fs",
+  "mustContain": "__rejoin",
+  "dependencies": [
+    "ws_core"
+  ],
+  "version": "1.0"
+}

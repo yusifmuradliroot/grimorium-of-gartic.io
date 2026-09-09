@@ -36,6 +36,8 @@ this repo receives built output. Export is MANUAL.
   (__voteFreeStatus) + wider fiber landmarks. Awaiting status paste.
 - vote_free 1.2 (public): retaliation vs voters targeting me (120s
   throttle, owner skipped). Awaiting live test.
+- NEW PUBLIC PLUGIN rejoin 1.0 (forge 2.11.1, decrypt==dev + marker OK,
+  deps ws_core): auto-return after kick (1/9). Awaiting user live test.
 - Rebuilt all with forge 2.11.1 (voyager 3.4 slot 0752595b, omni 7.2, 6 plugins).
   Decrypt==dev + markers + syntax verified per file. No source changes.
 - 2026-09-08 noforge outage fixed: omni.fs now carries its own runner again
