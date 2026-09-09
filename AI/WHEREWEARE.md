@@ -32,6 +32,8 @@ this repo receives built output. Export is MANUAL.
 - NEW PUBLIC PLUGINS cooldown_killer 1.0 + vote_free 1.0 (forge 2.11.1,
   decrypt==dev + markers OK): 15s hop wait removed, 60s votekick removed
   + autovote follower (never self/own). Awaiting user live test.
+- vote_free 1.1 (public): cooldown still reported live -> diagnosis slot
+  (__voteFreeStatus) + wider fiber landmarks. Awaiting status paste.
 - Rebuilt all with forge 2.11.1 (voyager 3.4 slot 0752595b, omni 7.2, 6 plugins).
   Decrypt==dev + markers + syntax verified per file. No source changes.
 - 2026-09-08 noforge outage fixed: omni.fs now carries its own runner again
