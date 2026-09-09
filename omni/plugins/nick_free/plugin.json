@@ -4,5 +4,5 @@
   "description": "Removes the client-side nickname gate so server-accepted names pass",
   "entry": "nick_free.fs",
   "mustContain": "__nickFree",
-  "version": "1.0"
+  "version": "1.1"
 }
