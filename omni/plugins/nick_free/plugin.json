@@ -1,0 +1,8 @@
+{
+  "id": "nick_free",
+  "name": "Nick Free",
+  "description": "Removes the client-side nickname gate so server-accepted names pass",
+  "entry": "nick_free.fs",
+  "mustContain": "__nickFree",
+  "version": "1.0"
+}
