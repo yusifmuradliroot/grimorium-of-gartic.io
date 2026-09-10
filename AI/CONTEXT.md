@@ -11,6 +11,8 @@ Firefox-based browsers + Violentmonkey. Everything is developed and tested again
 ## Omni layout (`omni/`)
 - `voyager/` — the ONLY `.js`: loader + embedded forgescript runner (forged output).
   Self-checks its version, shows blocker when outdated, boots `omni.fs`.
+  Exception: `omni_greasyfork.user.js` stays readable raw (GreasyFork
+  forbids obfuscation; it only fetches the build, carries no game code).
 - `omni/` — `omni.fs` (signed FS:2 build of the framework: Hub + API + GUI + Loader).
 - `plugins/` — shipped plugins as `.fs` (signed). Discovery chain:
   1. `index.json` → folder names

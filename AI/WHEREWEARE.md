@@ -61,6 +61,8 @@ this repo receives built output. Export is MANUAL.
 - command_center 2.0 + NEW bot_guard 1.0 (public): owner toolkit +
   tracked follower. Awaiting live test in owned room.
 - bot_guard 1.1 (public): turn play writes answer. Awaiting live test.
+- NEW LOADER omni_greasyfork.user.js (public, readable raw): GreasyFork
+  entry, fetches the voyager build. Mock 8/8.
 - REMOVED from public: bot_worker (fleet direction dropped; raw retained privately).
 - NEW PUBLIC anti_afk 8.0 (forge 2.11.1, decrypt==dev + marker OK):
   service bus + sid heartbeat + modal clicker. Awaiting live test.
