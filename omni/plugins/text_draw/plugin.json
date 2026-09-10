@@ -1,11 +1,11 @@
 {
   "id": "text_draw",
   "name": "Text Draw",
-  "description": "Vector text writer: auto-fit, one packet per word",
+  "description": "Vector text writer: auto-fit, array packets that render",
   "entry": "text_draw.fs",
   "mustContain": "__textDraw",
   "dependencies": [
     "ws_core"
   ],
-  "version": "1.2"
+  "version": "1.3"
 }
