@@ -18,7 +18,7 @@ plugins carry their own version.
   renamed it, breaking every .fs plugin load). Full chain re-verified.
 - ROLLBACK to last-known-good (load failures Direncli): voyager 2.3 + omni 4.0 +
   ws_core 1.2 + pixel_drawer 2.3 (8x8, 2-2-2 bit, 250ms). Effort split, turn gate,
-  ws raw parser and newer features STAY IN ABYSS LAB until the exec cause is found.
+  ws raw parser and newer features STAY IN THE LAB until the exec cause is found.
   Silence kept: rebuilt with forge nolog + red banner. Public pins old logic.
 - omni 4.1: visible load receipt (toast shows per-plugin loaded/fetch/exec/dep status).
 - Silent public: forge nolog strips all console.* (keep-log banner survives).
@@ -30,7 +30,7 @@ plugins carry their own version.
 ## Releases
 - omni 4.0 + voyager 2.x: embedded forgescript runner, `.fs` era (FS:2 signed).
   Public set: voyager.user.js + omni.fs + pixel_drawer.fs + ws_core.fs.
-  (anti_afk pulled: live-object finder failed on mobile, back to abyss lab.)
+  (anti_afk pulled: live-object finder failed on mobile, back to the lab.)
 - effort_engine 1.0 (new) + pixel_drawer 3.0: render split — engine quantizes 3-3-3 bit,
   auto-picks grid 16–32 by 100s budget; sender is turn-gated (faded until E16/E17-ours),
   200ms/packet, follows omni theme.
@@ -43,4 +43,4 @@ plugins carry their own version.
   aspect-aware ladder 16–48, full-res source + bit-shift snap.
 - omni 2.x–3.x: dependency resolution, theme bus, roster core, settings panel.
 - voyager 1.x: self-check + fail-closed blocker, single GM_info version source.
-- mywsid saga resolved via tolerant direct extract (see abyss LEARNINGS).
+- mywsid saga resolved via tolerant direct extract.

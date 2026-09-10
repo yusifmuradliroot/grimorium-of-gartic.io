@@ -2,7 +2,7 @@
 
 ## Goal
 `grimorium-of-gartic.io` (PUBLIC, branch `aetherial`) is the protected distribution
-of the Gartic.io scripting platform (SDK vision). Raw source lives in private abyss;
+of the Gartic.io scripting platform (SDK vision). Raw source lives in a private source repo;
 this repo receives built output. Export is MANUAL.
 
 ## Done
@@ -17,13 +17,12 @@ this repo receives built output. Export is MANUAL.
 - Current public set: voyager 3.1 + omni.fs 5.0 (clean recode) +
   pixel_drawer.fs 2.4 + ws_core.fs 1.2 + example.fs 1.0.
   (Rollback era over: exec root cause was the renamed runner, fixed forge 2.7.1.
-  New line still in abyss lab. Silence kept: nolog + banner.)
-  (anti_afk PULLED from public — both 6.0 and 7.0 failed live; raw stays in abyss.)
-  (Older public plugins were removed; abyss keeps all sources.)
+  New line still in the lab. Silence kept: nolog + banner.)
+  (anti_afk PULLED from public — both 6.0 and 7.0 failed live; raw stays back.)
+  (Older public plugins were removed; sources are retained privately.)
 
 ## User context
-- Device: mobile, Firefox-based. Console: AVAILABLE for now (past logs received).
-  Diagnose via console when present, badge otherwise.
+- Stack: Firefox-based + Violentmonkey (see CONTEXT).
 
 ## In progress
 - NEW PUBLIC PLUGIN nick_free 1.1 (forge 2.11.1, decrypt==dev + marker +
@@ -42,7 +41,7 @@ this repo receives built output. Export is MANUAL.
   JSON.stringify(window.__rejoinStatus) paste.
 - rejoin 2.0 (public): vote dodge + flagged auto-play. Awaiting live test
   (vote vs me should exit+reload+return).
-- REMOVED from public: allwslogger, example (raw stays in abyss).
+- REMOVED from public: allwslogger, example (sources retained privately).
 - NEW PUBLIC PLUGIN text_draw 1.0 (forge 2.11.1, decrypt==dev + marker +
   forged-behavior OK, deps ws_core): vector text writer. Awaiting live test.
 - text_draw 1.1 (public): auto-fit + word batching. Awaiting live test
@@ -62,7 +61,7 @@ this repo receives built output. Export is MANUAL.
 - command_center 2.0 + NEW bot_guard 1.0 (public): owner toolkit +
   tracked follower. Awaiting live test in owned room.
 - bot_guard 1.1 (public): turn play writes answer. Awaiting live test.
-- REMOVED from public: bot_worker (fleet direction dropped; raw in abyss).
+- REMOVED from public: bot_worker (fleet direction dropped; raw retained privately).
 - NEW PUBLIC anti_afk 8.0 (forge 2.11.1, decrypt==dev + marker OK):
   service bus + sid heartbeat + modal clicker. Awaiting live test.
 - Rebuilt all with forge 2.11.1 (voyager 3.4 slot 0752595b, omni 7.2, 6 plugins).
@@ -72,7 +71,7 @@ this repo receives built output. Export is MANUAL.
 
 ## Next
 - verify live boot of the .fs chain in a real room
-- republish further plugins (from abyss) on order
+- republish further plugins on order
 
 ## Open problems
-- (none open — mywsid saga RESOLVED via tolerant direct extract; see abyss LEARNINGS)
+- (none open — mywsid saga RESOLVED via tolerant direct extract)

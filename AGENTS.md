@@ -18,6 +18,6 @@ Read these files IN ORDER before doing anything:
 - Communicate with the user in **Turkish**, in short bite-sized steps. One decision at a time.
 
 ## Key facts
-- Raw source lives in private `abyss` repo. This repo is the protected public output.
+- Raw source lives in a private repo. This repo is the protected public output.
 - Build flow is MANUAL until automation infrastructure is ready.
 - Never start coding without user approval on the plan.

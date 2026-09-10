@@ -4,12 +4,9 @@
 Firefox-based browsers + Violentmonkey. Everything is developed and tested against this stack.
 
 ## Repos
-- `abyss-of-gartic.io` (PRIVATE, local `/tmp/abyss`): raw source, protection layers
-  DISABLED. All development happens here.
-- `grimorium-of-gartic.io` (PUBLIC, this repo, local `/root/grimorium-of-gartic.io`):
-  built output = abyss sources via forge (strip, short, crypt; pack for `.fs`).
-  branch `aetherial`. Raw JS never lands here.
-- Build bible lives in abyss: `docs/BUILD.md` (exact commands, dual-dev procedure).
+- `abyss-of-gartic.io` (PRIVATE): raw source. All development happens here.
+- `grimorium-of-gartic.io` (PUBLIC, this repo): protected built output.
+  Branch `aetherial`. Raw JS never lands here.
 
 ## Omni layout (`omni/`)
 - `voyager/` — the ONLY `.js`: loader + embedded forgescript runner (forged output).

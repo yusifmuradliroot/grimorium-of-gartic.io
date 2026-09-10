@@ -1,7 +1,7 @@
 # LEARNINGS — AI memory (AI: append here, never delete)
 
 ## Conventions (taste-level, don't churn these)
-- Branch names lowercase (`aetherial`, `chaotic`). Never rename for style alone.
+- Branch names lowercase (`aetherial`). Never rename for style alone.
 - When user bikesheds on details: give one honest short opinion, don't manufacture churn for zero gain.
 
 ## 2026-09-05 — infra-building session with user
@@ -60,7 +60,7 @@
   400 nodes): `game._ativo = now + game.active()` every 30s; wire ping only as fallback
   until the object is found. Lesson: simulate the game's METHOD, not just its packets.
 - 7.0 ALSO failed live → pulled from public. Finder likely misses on mobile layout
-  (different selectors/fiber shape). Raw stays in abyss for lab work; do NOT republish
+  (different selectors/fiber shape). Raw stays back for lab work; do NOT republish
   without a live mobile verification first.
 
 ## 2026-09-06 — mywsid outage post-mortem (root cause: orphaned service binding)
