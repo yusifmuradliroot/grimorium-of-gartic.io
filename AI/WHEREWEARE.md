@@ -44,6 +44,8 @@ this repo receives built output. Export is MANUAL.
   forged-behavior OK, deps ws_core): vector text writer. Awaiting live test.
 - text_draw 1.1 (public): auto-fit + word batching. Awaiting live test
   (batch render + auto-shrink).
+- text_draw 1.2 (public): overflow approval (warn + second-Draw confirm).
+  Awaiting live test.
 - Rebuilt all with forge 2.11.1 (voyager 3.4 slot 0752595b, omni 7.2, 6 plugins).
   Decrypt==dev + markers + syntax verified per file. No source changes.
 - 2026-09-08 noforge outage fixed: omni.fs now carries its own runner again
