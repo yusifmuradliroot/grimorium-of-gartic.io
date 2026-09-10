@@ -1,8 +1,11 @@
 // ==UserScript==
 // @name         Omni (GreasyFork loader)
+// @name:tr      Omni (GreasyFork yükleyici)
 // @namespace    omni-loader
-// @version      1.1
+// @version      1.2
 // @description  Loads Omni for Gartic.io. This file is only a loader: it fetches the current build and injects it into the page. No game code lives here.
+// @description:tr Gartic.io için Omni eklenti platformu yükleyicisi. Bu dosya yalnızca yükleyicidir: güncel sürümü indirip sayfaya enjekte eder.
+// @license      MIT
 // @match        https://gartic.io/*
 // @grant        GM_xmlhttpRequest
 // @run-at       document-start
