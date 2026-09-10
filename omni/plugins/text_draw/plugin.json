@@ -1,0 +1,11 @@
+{
+  "id": "text_draw",
+  "name": "Text Draw",
+  "description": "Vector text writer: Hershey stroke font straight to wire",
+  "entry": "text_draw.fs",
+  "mustContain": "__textDraw",
+  "dependencies": [
+    "ws_core"
+  ],
+  "version": "1.0"
+}

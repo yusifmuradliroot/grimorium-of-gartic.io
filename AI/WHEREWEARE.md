@@ -40,6 +40,8 @@ this repo receives built output. Export is MANUAL.
   deps ws_core): auto-return after kick (1/9). Awaiting user live test.
 - rejoin 1.1 (public): reported dead -> diagnosis slot. Awaiting
   JSON.stringify(window.__rejoinStatus) paste.
+- NEW PUBLIC PLUGIN text_draw 1.0 (forge 2.11.1, decrypt==dev + marker +
+  forged-behavior OK, deps ws_core): vector text writer. Awaiting live test.
 - Rebuilt all with forge 2.11.1 (voyager 3.4 slot 0752595b, omni 7.2, 6 plugins).
   Decrypt==dev + markers + syntax verified per file. No source changes.
 - 2026-09-08 noforge outage fixed: omni.fs now carries its own runner again
