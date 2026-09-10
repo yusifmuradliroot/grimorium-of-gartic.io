@@ -1,8 +1,0 @@
-{
-  "id": "example",
-  "name": "Example",
-  "description": "Minimal load probe (logs once, no dependencies)",
-  "entry": "example.fs",
-  "mustContain": "__example",
-  "version": "1.0"
-}

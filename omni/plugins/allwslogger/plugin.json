@@ -1,8 +1,0 @@
-{
-  "id": "allwslogger",
-  "name": "All WS Logger",
-  "description": "Independent wire mirror: URL + raw in/out to console",
-  "entry": "allwslogger.fs",
-  "mustContain": "__allWsLogger",
-  "version": "1.0"
-}
