@@ -1,0 +1,8 @@
+{
+  "id": "command_center",
+  "name": "Command Center",
+  "description": "Bot fleet panel: roster plus one-shot orders",
+  "entry": "command_center.fs",
+  "mustContain": "__commandCenter",
+  "version": "1.0"
+}

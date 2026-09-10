@@ -1,0 +1,8 @@
+{
+  "id": "bot_worker",
+  "name": "Bot Worker",
+  "description": "Remote-driven game client: join, say, guess, vote, leave",
+  "entry": "bot_worker.fs",
+  "mustContain": "__botWorker",
+  "version": "1.0"
+}
