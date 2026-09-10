@@ -1,0 +1,11 @@
+{
+  "id": "anti_afk",
+  "name": "Anti AFK",
+  "description": "Session keepalive: game.active() + sid heartbeat + inactive-modal click",
+  "entry": "anti_afk.fs",
+  "mustContain": "__antiAfk",
+  "dependencies": [
+    "ws_core"
+  ],
+  "version": "8.0"
+}
