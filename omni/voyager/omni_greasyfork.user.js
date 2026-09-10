@@ -2,7 +2,7 @@
 // @name         Omni (GreasyFork loader)
 // @name:tr      Omni (GreasyFork yükleyici)
 // @namespace    omni-loader
-// @version      1.3
+// @version      1.4
 // @description  Loads Omni for Gartic.io. This file is only a loader: it fetches the current build and injects it into the page. No game code lives here.
 // @description:tr Gartic.io için Omni eklenti platformu yükleyicisi. Bu dosya yalnızca yükleyicidir: güncel sürümü indirip sayfaya enjekte eder.
 // @license      MIT
@@ -115,27 +115,35 @@
             if (document.getElementById('omni-gf-note')) return;
             var box = document.createElement('div');
             box.id = 'omni-gf-note';
-            box.setAttribute('style', 'position:fixed;right:10px;bottom:10px;z-index:2147483647;background:#1e272e;color:#fff;border:2px solid #fff;border-radius:10px;padding:10px 12px;font:12px Arial;max-width:240px;');
+            box.setAttribute('style', 'position:fixed;right:12px;bottom:12px;z-index:2147483647;background:linear-gradient(160deg,#1e272e,#11181f);color:#f1f2f6;border:1px solid #57606f;border-radius:14px;padding:12px 14px;font:13px/1.45 Arial,sans-serif;max-width:260px;box-shadow:0 10px 28px rgba(0,0,0,.5);');
+            var head = document.createElement('div');
+            head.textContent = 'Omni';
+            head.setAttribute('style', 'font-weight:bold;font-size:14px;margin-bottom:4px;letter-spacing:.3px;');
+            box.appendChild(head);
             var msg = document.createElement('div');
             msg.textContent = 'This script does not give you full performance, please use the GitHub native version.';
+            msg.setAttribute('style', 'opacity:.92;');
             box.appendChild(msg);
             var row = document.createElement('div');
-            row.setAttribute('style', 'margin-top:8px;display:flex;gap:6px;');
+            row.setAttribute('style', 'margin-top:10px;display:flex;gap:8px;align-items:center;');
             var go = document.createElement('button');
-            go.textContent = 'Devam';
+            go.textContent = 'Continue';
+            go.setAttribute('style', 'flex:1;padding:7px 0;border:none;border-radius:8px;background:#0984e3;color:#fff;font:bold 12px Arial;cursor:pointer;');
             go.addEventListener('click', function () {
                 window.location.href = BUILD_URL;
             });
             row.appendChild(go);
             var hide = document.createElement('button');
-            hide.textContent = 'Bugün gösterme';
+            hide.textContent = "Don't show today";
+            hide.setAttribute('style', 'flex:1;padding:7px 0;border:1px solid #57606f;border-radius:8px;background:transparent;color:#dfe6e9;font:12px Arial;cursor:pointer;');
             hide.addEventListener('click', function () {
                 hideUntilTomorrow();
                 if (box.parentNode) box.parentNode.removeChild(box);
             });
             row.appendChild(hide);
             var x = document.createElement('button');
-            x.textContent = 'x';
+            x.textContent = '×';
+            x.setAttribute('style', 'padding:7px 10px;border:1px solid #57606f;border-radius:8px;background:transparent;color:#dfe6e9;font:12px Arial;cursor:pointer;');
             x.addEventListener('click', function () {
                 if (box.parentNode) box.parentNode.removeChild(box);
             });
