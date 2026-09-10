@@ -40,6 +40,8 @@ this repo receives built output. Export is MANUAL.
   deps ws_core): auto-return after kick (1/9). Awaiting user live test.
 - rejoin 1.1 (public): reported dead -> diagnosis slot. Awaiting
   JSON.stringify(window.__rejoinStatus) paste.
+- rejoin 2.0 (public): vote dodge + flagged auto-play. Awaiting live test
+  (vote vs me should exit+reload+return).
 - NEW PUBLIC PLUGIN text_draw 1.0 (forge 2.11.1, decrypt==dev + marker +
   forged-behavior OK, deps ws_core): vector text writer. Awaiting live test.
 - text_draw 1.1 (public): auto-fit + word batching. Awaiting live test
