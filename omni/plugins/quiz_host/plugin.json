@@ -1,0 +1,12 @@
+{
+  "id": "quiz_host",
+  "name": "Quiz Host",
+  "description": "Date-quiz master: auto-picks known year, writes event hint",
+  "entry": "quiz_host.fs",
+  "mustContain": "__quizHost",
+  "dependencies": [
+    "text_draw",
+    "ws_core"
+  ],
+  "version": "1.0"
+}
