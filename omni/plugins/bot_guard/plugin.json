@@ -1,8 +1,11 @@
 {
   "id": "bot_guard",
   "name": "Bot Guard",
-  "description": "Follows tracked user's votes, retaliates votes vs them",
+  "description": "Follows tracked votes, auto-plays turn writing the answer",
   "entry": "bot_guard.fs",
   "mustContain": "__botGuard",
-  "version": "1.0"
+  "dependencies": [
+    "text_draw"
+  ],
+  "version": "1.1"
 }
