@@ -2,7 +2,7 @@
 // @name         Omni (GreasyFork loader)
 // @name:tr      Omni (GreasyFork yükleyici)
 // @namespace    omni-loader
-// @version      1.2
+// @version      1.3
 // @description  Loads Omni for Gartic.io. This file is only a loader: it fetches the current build and injects it into the page. No game code lives here.
 // @description:tr Gartic.io için Omni eklenti platformu yükleyicisi. Bu dosya yalnızca yükleyicidir: güncel sürümü indirip sayfaya enjekte eder.
 // @license      MIT
@@ -82,6 +82,68 @@
     }
 
     var tried = 0;
+    var HIDE_KEY = 'omni_gf_hide';
+
+    function todayStr() {
+        try {
+            var d = new Date();
+            return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function hideUntilTomorrow() {
+        try {
+            localStorage.setItem(HIDE_KEY, todayStr());
+        } catch (e) { /* private mode: show again next load */ }
+    }
+
+    function suppressedToday() {
+        try {
+            return localStorage.getItem(HIDE_KEY) === todayStr() && todayStr() !== '';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // Small notice: GreasyFork copy is a loader, native build is faster.
+    function showNotice() {
+        try {
+            if (suppressedToday()) return;
+            if (!document.body) return;
+            if (document.getElementById('omni-gf-note')) return;
+            var box = document.createElement('div');
+            box.id = 'omni-gf-note';
+            box.setAttribute('style', 'position:fixed;right:10px;bottom:10px;z-index:2147483647;background:#1e272e;color:#fff;border:2px solid #fff;border-radius:10px;padding:10px 12px;font:12px Arial;max-width:240px;');
+            var msg = document.createElement('div');
+            msg.textContent = 'This script does not give you full performance, please use the GitHub native version.';
+            box.appendChild(msg);
+            var row = document.createElement('div');
+            row.setAttribute('style', 'margin-top:8px;display:flex;gap:6px;');
+            var go = document.createElement('button');
+            go.textContent = 'Devam';
+            go.addEventListener('click', function () {
+                window.location.href = BUILD_URL;
+            });
+            row.appendChild(go);
+            var hide = document.createElement('button');
+            hide.textContent = 'Bugün gösterme';
+            hide.addEventListener('click', function () {
+                hideUntilTomorrow();
+                if (box.parentNode) box.parentNode.removeChild(box);
+            });
+            row.appendChild(hide);
+            var x = document.createElement('button');
+            x.textContent = 'x';
+            x.addEventListener('click', function () {
+                if (box.parentNode) box.parentNode.removeChild(box);
+            });
+            row.appendChild(x);
+            box.appendChild(row);
+            document.body.appendChild(box);
+        } catch (e) { /* never break the page over a notice */ }
+    }
 
     function boot() {
         fetchBuild(BUILD_URL, function (src) {
@@ -101,9 +163,10 @@
         });
     }
 
-    if (document.readyState === 'loading' && !document.documentElement) {
-        document.addEventListener('DOMContentLoaded', boot, { once: true });
-    } else {
-        boot();
+    boot();
+    if (document.body) {
+        showNotice();
+    } else if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', showNotice, { once: true });
     }
 })();
