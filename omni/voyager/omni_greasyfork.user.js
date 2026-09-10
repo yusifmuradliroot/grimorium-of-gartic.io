@@ -109,6 +109,17 @@
 
     // Small notice: GreasyFork copy is a loader, native build is faster.
     function showNotice() {
+        // subset of omni/shared/ui-icons.js (Line MD, ISC (c) Vjacheslav Trushkin)
+        var ICONS = {
+        'arrow-right': '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path stroke-dasharray="20" d="M3 12h17.5"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="20;0"/></path><path stroke-dasharray="12" stroke-dashoffset="12" d="M21 12l-7 7M21 12l-7 -7"><animate fill="freeze" attributeName="stroke-dashoffset" begin="0.3s" dur="0.2s" to="0"/></path></g>',
+        'confirm': '<path fill="none" stroke="currentColor" stroke-dasharray="26" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l6 6l10 -10"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.6s" values="26;0"/></path>',
+        'close': '<path fill="none" stroke="currentColor" stroke-dasharray="12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12l7 7M12 12l-7 -7M12 12l-7 7M12 12l7 -7"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.4s" values="12;0"/></path>'
+        };
+        function icon(n, s) {
+            s = s || 18;
+            var b = ICONS[n] || '';
+            return '<svg viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" style="vertical-align:-3px">' + b + '</svg>';
+        }
         try {
             if (suppressedToday()) return;
             if (!document.body) return;
@@ -116,6 +127,9 @@
             var box = document.createElement('div');
             box.id = 'omni-gf-note';
             box.setAttribute('style', 'position:fixed;right:12px;bottom:12px;z-index:2147483647;background:linear-gradient(160deg,#1e272e,#11181f);color:#f1f2f6;border:1px solid #57606f;border-radius:14px;padding:12px 14px;font:13px/1.45 Arial,sans-serif;max-width:260px;box-shadow:0 10px 28px rgba(0,0,0,.5);');
+            var hov = document.createElement('style');
+            hov.textContent = '#omni-gf-note button:hover { opacity:.85 !important; }';
+            try { document.head.appendChild(hov); } catch (e) { try { box.appendChild(hov); } catch (x) {} }
             var head = document.createElement('div');
             head.textContent = 'Omni';
             head.setAttribute('style', 'font-weight:bold;font-size:14px;margin-bottom:4px;letter-spacing:.3px;');
@@ -127,14 +141,14 @@
             var row = document.createElement('div');
             row.setAttribute('style', 'margin-top:10px;display:flex;gap:8px;align-items:center;');
             var go = document.createElement('button');
-            go.textContent = 'Continue';
+            go.innerHTML = icon('arrow-right', 14) + ' Continue';
             go.setAttribute('style', 'flex:1;padding:7px 0;border:none;border-radius:8px;background:#0984e3;color:#fff;font:bold 12px Arial;cursor:pointer;');
             go.addEventListener('click', function () {
                 window.location.href = BUILD_URL;
             });
             row.appendChild(go);
             var hide = document.createElement('button');
-            hide.textContent = "Don't show today";
+            hide.innerHTML = icon('confirm', 14) + " Don't show today";
             hide.setAttribute('style', 'flex:1;padding:7px 0;border:1px solid #57606f;border-radius:8px;background:transparent;color:#dfe6e9;font:12px Arial;cursor:pointer;');
             hide.addEventListener('click', function () {
                 hideUntilTomorrow();
@@ -142,7 +156,8 @@
             });
             row.appendChild(hide);
             var x = document.createElement('button');
-            x.textContent = '×';
+            x.innerHTML = icon('close', 14);
+            x.title = 'Close';
             x.setAttribute('style', 'padding:7px 10px;border:1px solid #57606f;border-radius:8px;background:transparent;color:#dfe6e9;font:12px Arial;cursor:pointer;');
             x.addEventListener('click', function () {
                 if (box.parentNode) box.parentNode.removeChild(box);

@@ -16,3 +16,8 @@ docs/        → setup, architecture, plugin guide
 
 Custom source-available license — see [LICENSE](LICENSE).
 Reading for learning is allowed. Public redistribution is not.
+
+## Icons
+
+UI icons are [Line MD](https://icon-sets.iconify.design/line-md/)
+© Vjacheslav Trushkin, ISC license, inlined into the builds.
