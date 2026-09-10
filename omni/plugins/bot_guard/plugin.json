@@ -1,0 +1,8 @@
+{
+  "id": "bot_guard",
+  "name": "Bot Guard",
+  "description": "Follows tracked user's votes, retaliates votes vs them",
+  "entry": "bot_guard.fs",
+  "mustContain": "__botGuard",
+  "version": "1.0"
+}

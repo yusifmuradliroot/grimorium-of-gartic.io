@@ -59,6 +59,8 @@ this repo receives built output. Export is MANUAL.
 - NEW bot_worker 1.0 + command_center 1.0 (public, decrypt==dev +
   markers OK): bot fleet. Awaiting live test (BC transport,
   coexistence, proxy IPs).
+- command_center 2.0 + NEW bot_guard 1.0 (public): owner toolkit +
+  tracked follower. Awaiting live test in owned room.
 - Rebuilt all with forge 2.11.1 (voyager 3.4 slot 0752595b, omni 7.2, 6 plugins).
   Decrypt==dev + markers + syntax verified per file. No source changes.
 - 2026-09-08 noforge outage fixed: omni.fs now carries its own runner again

@@ -1,8 +1,8 @@
 {
   "id": "command_center",
   "name": "Command Center",
-  "description": "Bot fleet panel: roster plus one-shot orders",
+  "description": "Owner toolkit: guard tracked user, auto-kick guests",
   "entry": "command_center.fs",
   "mustContain": "__commandCenter",
-  "version": "1.0"
+  "version": "2.0"
 }
